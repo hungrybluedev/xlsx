@@ -7,5 +7,5 @@ fn test_empty() ! {
 	document := xlsx.Document.from_file(path)!
 
 	dump(document)
-	// assert false
+	assert false
 }

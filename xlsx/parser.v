@@ -26,6 +26,8 @@ fn load_shared_strings(path string, shared_strings_path string) ![]string {
 			return error('Failed to parse shared strings file of excel file: ${path}')
 		}
 
+		dump(strings_doc)
+
 		all_defined_strings := strings_doc.get_elements_by_tag('si')
 		for definition in all_defined_strings {
 			t_element := definition.children[0]
@@ -44,10 +46,7 @@ fn load_shared_strings(path string, shared_strings_path string) ![]string {
 }
 
 fn load_worksheets_metadata(path string, worksheets_file_path string) !map[int]string {
-	mut work_file := os.open(worksheets_file_path) or {
-		return error('Failed to open worksheets file of excel file: ${path}')
-	}
-	worksheets_doc := xml.XMLDocument.from_reader(mut work_file) or {
+	worksheets_doc := xml.XMLDocument.from_file(worksheets_file_path) or {
 		return error('Failed to parse worksheets file of excel file: ${path}')
 	}
 
@@ -94,13 +93,13 @@ pub fn Document.from_file(path string) !Document {
 		sheet_name := sheet_metadata[sheet_id] or {
 			return error('Failed to find sheet name for sheet ID: ${sheet_id}')
 		}
+		dump(sheet_name)
 
 		sheet_doc := xml.XMLDocument.from_file(sheet_path) or {
 			return error('Failed to parse sheet file: ${sheet_path}')
 		}
 
 		sheet := Sheet.from_doc(sheet_name, sheet_doc, shared_strings) or {
-			dump(err)
 			return error('Failed to parse sheet file: ${sheet_path}')
 		}
 

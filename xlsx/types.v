@@ -52,3 +52,7 @@ pub:
 	location  Location
 	value     string
 }
+
+pub struct DataFrame {
+	
+}
