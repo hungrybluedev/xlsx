@@ -21,3 +21,6 @@ bin/
 # vweb and database
 *.db
 *.js
+
+# Ignore backup XLSX files
+*~*.xlsx
