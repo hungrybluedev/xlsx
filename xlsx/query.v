@@ -22,21 +22,22 @@ pub fn (sheet Sheet) get_data(top_left Location, bottom_right Location) !DataFra
 	if top_left.row >= sheet.rows.len {
 		return error('top_left.row out of range')
 	}
-	if bottom_right.row >= sheet.rows.len {
+	if bottom_right.row > sheet.rows.len {
 		return error('bottom_right.row out of range')
 	}
 	if top_left.col >= sheet.rows[top_left.row].cells.len {
 		return error('top_left.col out of range')
 	}
-	if bottom_right.col >= sheet.rows[bottom_right.row].cells.len {
+	if bottom_right.col > sheet.rows[bottom_right.row].cells.len {
 		return error('bottom_right.col out of range')
 	}
 	mut row_values := [][]string{cap: top_left.row - bottom_right.row + 1}
+
 	for index in top_left.row .. bottom_right.row + 1 {
 		row := sheet.rows[index]
 		mut cell_values := []string{cap: top_left.col - bottom_right.col + 1}
-		for cell in row.cells[top_left.col..bottom_right.col + 1] {
-			cell_values << cell.value
+		for column in top_left.col .. bottom_right.col + 1 {
+			cell_values << row.cells[column].value
 		}
 		row_values << cell_values
 	}

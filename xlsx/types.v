@@ -61,5 +61,10 @@ pub:
 }
 
 pub struct DataFrame {
+pub:
 	raw_data [][]string
+}
+
+pub fn (data DataFrame) row_count() int {
+	return data.raw_data.len
 }

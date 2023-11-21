@@ -120,13 +120,13 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sh
 	} else {
 		dimension_parts[0]
 	}
-	bottom_right := Location.from_encoding(bottom_right_code)!
+	mut bottom_right := Location.from_encoding(bottom_right_code)!
 
 	row_tags := doc.get_elements_by_tag('row')
 
 	mut rows := []Row{}
 
-	for row in row_tags {
+	row_loop: for row in row_tags {
 		// Get the location of the row.
 		row_label := row.attributes['r'] or { return error('Row does not include location.') }
 		row_index := row_label.int() - 1
@@ -141,6 +141,11 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sh
 		for child in row.children {
 			match child {
 				xml.XMLNode {
+					// First, we check if the cell is empty
+					if child.children.len == 0 {
+						bottom_right = Location.from_cartesian(row_index - 1, bottom_right.col)!
+						break row_loop
+					}
 					matching_tags := child.children.filter(it is xml.XMLNode && it.name == 'v').map(it as xml.XMLNode)
 					if matching_tags.len > 1 {
 						return error('Expected only one value: ${child}')
