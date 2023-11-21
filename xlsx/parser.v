@@ -67,7 +67,6 @@ pub fn Document.from_file(path string) !Document {
 
 	// Then we list the files in the "xl" directory.
 	xl_path := os.join_path(location, 'xl')
-	files := os.ls(xl_path)!
 
 	// Load the strings from the shared strings file, if it exists.
 	shared_strings_path := os.join_path(xl_path, 'sharedStrings.xml')
