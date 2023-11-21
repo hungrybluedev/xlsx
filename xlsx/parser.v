@@ -26,8 +26,6 @@ fn load_shared_strings(path string, shared_strings_path string) ![]string {
 			return error('Failed to parse shared strings file of excel file: ${path}')
 		}
 
-		dump(strings_doc)
-
 		all_defined_strings := strings_doc.get_elements_by_tag('si')
 		for definition in all_defined_strings {
 			t_element := definition.children[0]
@@ -62,7 +60,6 @@ fn load_worksheets_metadata(path string, worksheets_file_path string) !map[int]s
 pub fn Document.from_file(path string) !Document {
 	// First, we extract the ZIP file into a temporary directory.
 	location := create_temporary_directory()
-	dump(location)
 
 	szip.extract_zip_to_dir(path, location) or {
 		return error('Failed to extract information from file: ${path}')
@@ -71,8 +68,6 @@ pub fn Document.from_file(path string) !Document {
 	// Then we list the files in the "xl" directory.
 	xl_path := os.join_path(location, 'xl')
 	files := os.ls(xl_path)!
-
-	println('Files in directory: ${files}')
 
 	// Load the strings from the shared strings file, if it exists.
 	shared_strings_path := os.join_path(xl_path, 'sharedStrings.xml')
@@ -93,7 +88,6 @@ pub fn Document.from_file(path string) !Document {
 		sheet_name := sheet_metadata[sheet_id] or {
 			return error('Failed to find sheet name for sheet ID: ${sheet_id}')
 		}
-		dump(sheet_name)
 
 		sheet_doc := xml.XMLDocument.from_file(sheet_path) or {
 			return error('Failed to parse sheet file: ${sheet_path}')
@@ -113,6 +107,22 @@ pub fn Document.from_file(path string) !Document {
 }
 
 fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sheet {
+	dimension_tags := doc.get_elements_by_tag('dimension')
+	if dimension_tags.len != 1 {
+		return error('Expected exactly one dimension tag.')
+	}
+	dimension_string := dimension_tags[0].attributes['ref'] or {
+		return error('Dimension does not include location.')
+	}
+	dimension_parts := dimension_string.split(':')
+	top_left := Location.from_encoding(dimension_parts[0])!
+	bottom_right_code := if dimension_parts.len == 2 {
+		dimension_parts[1]
+	} else {
+		dimension_parts[0]
+	}
+	bottom_right := Location.from_encoding(bottom_right_code)!
+
 	row_tags := doc.get_elements_by_tag('row')
 
 	mut rows := []Row{}
@@ -171,5 +181,7 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sh
 	return Sheet{
 		name: name
 		rows: rows
+		top_left: top_left
+		bottom_right: bottom_right
 	}
 }

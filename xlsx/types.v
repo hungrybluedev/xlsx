@@ -6,7 +6,22 @@ pub:
 	sheets         map[int]Sheet
 }
 
+pub struct Location {
+pub:
+	row       int
+	col       int
+	row_label string
+	col_label string
+}
+
+pub struct Dimension {
+pub:
+	top_left     Location
+	bottom_right Location
+}
+
 pub struct Sheet {
+	Dimension
 pub:
 	name string
 	rows []Row
@@ -38,14 +53,6 @@ pub fn CellType.from_code(code string) !CellType {
 	}
 }
 
-pub struct Location {
-pub:
-	row       int
-	col       int
-	row_label string
-	col_label string
-}
-
 pub struct Cell {
 pub:
 	cell_type CellType
@@ -54,5 +61,5 @@ pub:
 }
 
 pub struct DataFrame {
-	
+	raw_data [][]string
 }
