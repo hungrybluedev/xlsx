@@ -6,6 +6,6 @@ fn test_empty() ! {
 
 	document := xlsx.Document.from_file(path)!
 
-	dump(document)
-	assert false
+	sheet := document.sheets[1]
+	assert sheet.get_all_data()! == xlsx.DataFrame{}
 }
