@@ -24,3 +24,7 @@ bin/
 
 # Ignore backup XLSX files
 *~*.xlsx
+
+# Ignore scratch files
+scratch/
+

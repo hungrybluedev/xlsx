@@ -2,11 +2,9 @@ module xlsx
 
 import strings
 
-const (
-	a_ascii  = u8(`A`)
-	max_rows = 1048576
-	max_cols = 16384
-)
+const a_ascii = u8(`A`)
+const max_rows = 1048576
+const max_cols = 16384
 
 fn col_to_label(col int) string {
 	if col < 26 {
