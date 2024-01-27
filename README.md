@@ -24,6 +24,10 @@ A package in pure V for reading and writing (soon) Excel files in the XLSX forma
 1. Join the V Discord server: https://discord.gg/vlang
 2. Write in the `#xlsx` channel about your ideas and what you want to do.
 
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for more details.
+
 ## Support
 
 If you like this project, please consider supporting me on [GitHub Sponsors](https://github.com/sponsors/hungrybluedev).
