@@ -1,7 +1,7 @@
 module xlsx
 
 import os
-import szip
+import compress.szip
 import rand
 import encoding.xml
 
@@ -58,6 +58,10 @@ fn load_worksheets_metadata(path string, worksheets_file_path string) !map[int]s
 }
 
 pub fn Document.from_file(path string) !Document {
+	// Fail if the file does not exist.
+	if !os.exists(path) {
+		return error('File does not exist: ${path}')
+	}
 	// First, we extract the ZIP file into a temporary directory.
 	location := create_temporary_directory()
 
