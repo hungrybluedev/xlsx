@@ -2,7 +2,7 @@ import os
 import xlsx
 
 fn main() {
-	workbook := xlsx.Document.from_file(os.join_path(os.dir(@FILE), 'data.xlsx'))!
+	workbook := xlsx.Document.from_file(os.resource_abs_path('01_marksheet/data.xlsx'))!
 	println('[info] Successfully loaded workbook with ${workbook.sheets.len} worksheets.')
 
 	println('\nAvailable sheets:')
