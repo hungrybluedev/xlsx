@@ -14,8 +14,9 @@ fn main() {
 	// Excel uses 1-based indexing for sheets.
 	sheet1 := workbook.sheets[1]
 
-	// Note that the Cell struct is able to store both strings and numbers.
-	// So we can have an idea of what to expect before getting all the data as a dataset.
+	// Note that the Cell struct is able to the CellType.
+	// So we can have an idea of what to expect before getting all
+	// the data as a dataset with just string data.
 	dataset := sheet1.get_all_data()!
 
 	count := dataset.row_count()

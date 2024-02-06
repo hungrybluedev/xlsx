@@ -9,6 +9,111 @@ A package in pure V for reading and writing (soon) Excel files in the XLSX forma
 - [x] Read XLSX files.
 - [ ] Write XLSX files.
 
+## Installation
+
+```bash
+v install https://github.com/hungrybluedev/xlsx
+```
+
+## Usage
+
+### Reading XLSX files
+
+Take the `data.xlsx` file from the `examples/01_marksheet` directory for this example.
+
+```v
+import xlsx
+
+fn main() {
+	workbook := xlsx.Document.from_file('path/to/data.xlsx')!
+	println('[info] Successfully loaded workbook with ${workbook.sheets.len} worksheets.')
+
+	println('\nAvailable sheets:')
+	// sheets are stored as a map, so we can iterate over the keys.
+	for index, key in workbook.sheets.keys() {
+		println('${index + 1}: "${key}"')
+	}
+
+	// Excel uses 1-based indexing for sheets.
+	sheet1 := workbook.sheets[1]
+
+	// Note that the Cell struct is able to the CellType.
+	// So we can have an idea of what to expect before getting all
+	// the data as a dataset with just string data.
+	dataset := sheet1.get_all_data()!
+
+	count := dataset.row_count()
+
+	println('\n[info] Sheet 1 has ${count} rows.')
+
+	headers := dataset.raw_data[0]
+
+	println('\nThe headers are:')
+	for index, header in headers {
+		println('${index + 1}. ${header}')
+	}
+
+	println('\nThe student names are:')
+
+	for index in 1 .. count {
+		row := dataset.raw_data[index]
+		// All data is stored as strings, so we need to convert it to the appropriate type.
+		roll := row[0].int()
+		name := row[1] + ' ' + row[2]
+		println('${roll:02d}. ${name}')
+	}
+}
+
+```
+
+Remember to replace `'path/to/data.xlsx'` with the actual path to the file.
+
+After you are done, run the program:
+
+```bash
+v run marksheet.v
+```
+
+You should see the following output:
+
+```plaintext
+[info] Successfully loaded workbook with 1 worksheets.
+
+Available sheets:
+1: "1"
+
+[info] Sheet 1 has 11 rows.
+
+The headers are:
+1. Roll Number
+2. First Name
+3. Last Name
+4. Physics
+5. Chemistry
+6. Biology
+7. Mathematics
+8. Total
+9. Percentage
+
+The student names are:
+01. Priya Patel
+02. Kwame Nkosi
+03. Mei Chen
+04. Aisha Adekunle
+05. Javed Khan
+06. Mei-Ling Wong
+07. Oluwafemi Adeyemi
+08. Yuki Takahashi
+09. Rashid Al-Mansoori
+10. Sanya Verma
+```
+
+Try running the example on other XLSX files to see how it works. Modify the example to suit your needs.
+
+### Writing XLSX files
+
+_Coming soon!_
+
 ## Get Involved
 
 - It is a good idea to have examples files ready for testing. Ideally, the test files should be as small as possible.
