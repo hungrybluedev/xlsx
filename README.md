@@ -63,7 +63,6 @@ fn main() {
 		println('${roll:02d}. ${name}')
 	}
 }
-
 ```
 
 Remember to replace `'path/to/data.xlsx'` with the actual path to the file.
@@ -108,7 +107,8 @@ The student names are:
 10. Sanya Verma
 ```
 
-Try running the example on other XLSX files to see how it works. Modify the example to suit your needs.
+Try running the example on other XLSX files to see how it works.
+Modify the example to suit your needs.
 
 ### Writing XLSX files
 
@@ -116,8 +116,11 @@ _Coming soon!_
 
 ## Get Involved
 
-- It is a good idea to have examples files ready for testing. Ideally, the test files should be as small as possible.
-- If it is a feature request, please provide a detailed description of the feature and how it should work.
+- It is a good idea to have examples files ready for testing.
+Ideally, the test files should be as small as possible.
+
+- If it is a feature request, please provide a detailed description
+of the feature and how it should work.
 
 ### On GitHub
 
