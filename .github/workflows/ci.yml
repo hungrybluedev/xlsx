@@ -1,0 +1,39 @@
+name: Code Quality
+
+on: [push, pull_request]
+
+jobs:
+  code-quality:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    if: >
+        github.event_name != 'push'
+        || github.event.ref == 'refs/heads/master'
+        || github.event.repository.full_name != 'hungrybluedev/xlsx'
+
+    steps:
+      - name: Checkout Latest V
+        uses: actions/checkout@v4
+        with:
+          repository: vlang/v
+          path: v
+
+      - name: Build V
+        run: cd v && make && ./v symlink -githubci && cd -
+
+      - name: Checkout markdown (for tests)
+        uses: actions/checkout@v4
+        with:
+          path: xlsx
+
+      - name: Run tests
+        run: cd xlsx && v test .
+
+      - name: Ensure code is formatted
+        run: cd xlsx && v fmt -verify .
+
+      - name: Ensure documentation is OK
+        run: cd xlsx && v check-md .
