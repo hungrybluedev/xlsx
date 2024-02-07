@@ -29,8 +29,8 @@ jobs:
         with:
           path: xlsx
 
-      - name: Symlink to ~/.vmodules/xlsx, as if it was installed through VPM
-        run: ln -s $(realpath xlsx) ~/.vmodules/xlsx
+      - name: clone to ~/.vmodules/xlsx as well, as VPM does
+        run: git clone xlsx/ ~/.vmodules/xlsx
 
       - name: Run tests
         run: cd xlsx && v test .
