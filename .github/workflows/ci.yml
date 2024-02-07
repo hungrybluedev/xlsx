@@ -32,17 +32,14 @@ jobs:
           cd v
           make
           ./v symlink -githubci
+          git clone xlsx/ ~/.vmodules/xlsx
       - name: Build V with make.bat
         if: ${{ startsWith(matrix.os, 'windows') }}
         run: |
           cd v
           .\make.bat
           .\v.exe symlink -githubci
-
-      - name: Clone to ~/.vmodules/xlsx as well, as VPM does
-        run: |
-          git clone xlsx/ ${{ runner.temp }}/vmodules/xlsx
-          echo "VMODULES=${{ runner.temp }}/vmodules" >> $GITHUB_ENV
+          git clone xlsx/ %USERPROFILE%/.vmodules/xlsx
 
       - name: Run tests
         run: cd xlsx && v test .
