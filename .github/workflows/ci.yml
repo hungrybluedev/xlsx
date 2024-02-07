@@ -13,8 +13,6 @@ jobs:
         github.event_name != 'push'
         || github.event.ref == 'refs/heads/master'
         || github.event.repository.full_name != 'hungrybluedev/xlsx'
-    env:
-      VMODULES: ${{ runner.temp }}/vmodules
 
     steps:
       - name: Checkout Latest V
@@ -42,7 +40,9 @@ jobs:
           .\v.exe symlink -githubci
 
       - name: Clone to ~/.vmodules/xlsx as well, as VPM does
-        run: git clone xlsx/ ${{ env.VMODULES }}
+        run: |
+          git clone xlsx/ ${{ runner.temp }}/vmodules/xlsx
+          echo "VMODULES=${{ runner.temp }}/vmodules" >> $GITHUB_ENV
 
       - name: Run tests
         run: cd xlsx && v test .
