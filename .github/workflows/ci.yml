@@ -33,7 +33,9 @@ jobs:
           path: xlsx
 
       - name: Build V
-        run: cd v && make && ./v symlink -githubci && git clone ../xlsx/ ~/.vmodules/xlsx
+        run: |
+          cd v && make
+          ./v symlink -githubci && git clone ../xlsx/ ~/.vmodules/xlsx
 
       - name: Run tests
         run: cd xlsx && v test .
@@ -43,3 +45,9 @@ jobs:
 
       - name: Ensure documentation is OK
         run: cd xlsx && v check-md .
+
+      - name: Ensure all examples compile
+        run: cd xlsx && v should-compile-all examples/
+
+      - name: Ensure marks example, can run from an arbitrary working folder
+        run: xlsx/examples/01_marksheet/marks
