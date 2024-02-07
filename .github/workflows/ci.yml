@@ -24,7 +24,7 @@ jobs:
       - name: Build V
         run: cd v && make && ./v symlink -githubci && cd -
 
-      - name: Checkout markdown (for tests)
+      - name: Checkout the XLSX module
         uses: actions/checkout@v4
         with:
           path: xlsx
