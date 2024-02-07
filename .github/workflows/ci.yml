@@ -21,8 +21,18 @@ jobs:
           repository: vlang/v
           path: v
 
-      - name: Build V
-        run: cd v && make && ./v symlink -githubci && cd -
+      - name: Build V with make
+        if: ${{ !startsWith(matrix.os, 'windows') }}
+        run: |
+          cd v
+          make
+          ./v symlink -githubci
+      - name: Build V with make.bat
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        run: |
+          cd v
+          .\make.bat
+          .\v.exe symlink -githubci
 
       - name: Checkout the XLSX module
         uses: actions/checkout@v4
