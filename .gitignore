@@ -28,4 +28,4 @@ bin/
 
 # Ignore scratch files
 scratch/
-
+scratch*
