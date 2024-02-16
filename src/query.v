@@ -16,7 +16,7 @@ pub fn (sheet Sheet) get_all_data() !DataFrame {
 }
 
 pub fn (sheet Sheet) get_data(top_left Location, bottom_right Location) !DataFrame {
-	if bottom_right.row == 0 && bottom_right.row == 0 && sheet.rows.len == 0 {
+	if top_left.row == 0 && bottom_right.row == 0 && sheet.rows.len == 0 {
 		return DataFrame{}
 	}
 	if top_left.row >= sheet.rows.len {
