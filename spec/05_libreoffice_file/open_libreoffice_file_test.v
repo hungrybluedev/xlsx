@@ -2,7 +2,7 @@ import os
 import xlsx
 
 fn test_opening_a_libreoffice_calc_table() {
-	workbook := xlsx.Document.from_file(os.resource_abs_path('abc.xlsx'))!
+	workbook := xlsx.Document.from_file(os.join_path(os.dir(@FILE), 'abc.xlsx'))!
 	println('[info] Successfully loaded workbook with ${workbook.sheets.len} worksheets.')
 	println('\nAvailable sheets:')
 	for index, key in workbook.sheets.keys() {
