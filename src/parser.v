@@ -21,29 +21,35 @@ fn create_temporary_directory() string {
 fn load_shared_strings(path string, shared_strings_path string) ![]string {
 	mut shared_strings := []string{}
 
-	if os.exists(shared_strings_path) {
-		strings_doc := xml.XMLDocument.from_file(shared_strings_path) or {
-			return error('Failed to parse shared strings file of excel file: ${path}')
-		}
-
-		all_defined_strings := strings_doc.get_elements_by_tag('si')
-		for definition in all_defined_strings {
-			t_element := definition.children[0]
-			if t_element !is xml.XMLNode || (t_element as xml.XMLNode).name != 't' {
-				return error('Invalid shared string definition: ${definition}')
-			}
-
-			content := (t_element as xml.XMLNode).children[0]
-			if content !is string {
-				return error('Invalid shared string definition: ${definition}')
-			}
-			shared_strings << (content as string)
-		}
+	if !os.exists(shared_strings_path) {
+		return shared_strings
 	}
+
+	strings_doc := xml.XMLDocument.from_file(shared_strings_path) or {
+		return error('Failed to parse shared strings file of excel file: ${path}')
+	}
+
+	all_defined_strings := strings_doc.get_elements_by_tag('si')
+	for definition in all_defined_strings {
+		t_element := definition.children[0]
+		if t_element !is xml.XMLNode || (t_element as xml.XMLNode).name != 't' {
+			return error('Invalid shared string definition: ${definition}')
+		}
+
+		content := (t_element as xml.XMLNode).children[0]
+		if content !is string {
+			return error('Invalid shared string definition: ${definition}')
+		}
+		shared_strings << (content as string)
+	}
+	
 	return shared_strings
 }
 
 fn load_worksheets_metadata(path string, worksheets_file_path string) !map[int]string {
+	if !os.exists(worksheets_file_path) {
+		return error('Worksheets file does not exist: ${path}')
+	}
 	worksheets_doc := xml.XMLDocument.from_file(worksheets_file_path) or {
 		return error('Failed to parse worksheets file of excel file: ${path}')
 	}
@@ -66,7 +72,7 @@ pub fn Document.from_file(path string) !Document {
 	location := create_temporary_directory()
 
 	szip.extract_zip_to_dir(path, location) or {
-		return error('Failed to extract information from file: ${path}')
+		return error('Failed to extract information from file: ${path}\nError:\n${err}')
 	}
 
 	// Then we list the files in the "xl" directory.
