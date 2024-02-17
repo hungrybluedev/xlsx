@@ -135,7 +135,7 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sh
 		row_label := row.attributes['r'] or { return error('Row does not include location.') }
 		row_index := row_label.int() - 1
 
-		span_string := row.attributes['spans'] or { return error('Row does not include span.') }
+		span_string := row.attributes['spans'] or { '0:0' }
 
 		span := span_string.split(':').map(it.int())
 		cell_count := span[1] - span[0] + 1
@@ -185,7 +185,6 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sh
 			cells: cells
 		}
 	}
-
 	return Sheet{
 		name: name
 		rows: rows
