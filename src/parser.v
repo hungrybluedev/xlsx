@@ -42,7 +42,7 @@ fn load_shared_strings(path string, shared_strings_path string) ![]string {
 		}
 		shared_strings << (content as string)
 	}
-	
+
 	return shared_strings
 }
 
