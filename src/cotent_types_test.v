@@ -1,6 +1,7 @@
 module main
 
 import xlsx
+import time
 
 fn test_empty() ! {
 	empty_xml := '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>'
@@ -101,4 +102,36 @@ fn test_sample_data() {
 
 	assert content_types == expected_types
 	assert content_types.str() == data_contents
+}
+
+const core_properties_dataset = [
+	xlsx.CoreProperties{
+		created_by: 'Subhomoy Haldar'
+		modified_by: 'Subhomoy Haldar'
+		created_at: time.parse_iso8601('2024-02-10T10:24:19Z') or { panic('Failed to parse time.') }
+		modified_at: time.parse_iso8601('2024-02-10T10:24:36Z') or {
+			panic('Failed to parse time.')
+		}
+	},
+	xlsx.CoreProperties{
+		created_by: 'Person A'
+		modified_by: 'Person B'
+		created_at: time.parse_iso8601('2024-02-10T10:24:19Z') or { panic('Failed to parse time.') }
+		modified_at: time.parse_iso8601('2024-02-15T12:08:10Z') or {
+			panic('Failed to parse time.')
+		}
+	},
+]
+
+fn test_core_properties() {
+	for data in core_properties_dataset {
+		time_creation := data.created_at.ymmdd() + 'T' + data.created_at.hhmmss() + 'Z'
+		time_modified := data.modified_at.ymmdd() + 'T' + data.modified_at.hhmmss() + 'Z'
+
+		core_content := '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"xmlns:dc="http://purl.org/dc/elements/1.1/"xmlns:dcterms="http://purl.org/dc/terms/"xmlns:dcmitype="http://purl.org/dc/dcmitype/"xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:creator>${data.created_by}</dc:creator><cp:lastModifiedBy>${data.modified_by}</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${time_creation}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${time_modified}</dcterms:modified></cp:coreProperties>'
+
+		core_properties := xlsx.CoreProperties.parse(core_content)!
+		assert core_properties == data
+		assert core_properties.str() == core_content
+	}
 }
