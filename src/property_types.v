@@ -2,6 +2,7 @@ module xlsx
 
 import encoding.xml
 import strings
+import time
 
 pub struct DefaultContentType {
 pub:
@@ -86,4 +87,17 @@ pub fn ContentTypes.parse(content string) !ContentTypes {
 	}
 
 	return ContentTypes{defaults, overrides}
+}
+
+pub struct CoreProperties {
+pub:
+	created_by string
+	modified_by string
+	created_at time.Time
+	modified_at time.Time
+}
+
+pub fn (props CoreProperties) str() string {
+	time_creation := props.created_at.ymmdd() + 'T' + props.created_at.hhmmss() + 'Z'
+	return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"xmlns:dc="http://purl.org/dc/elements/1.1/"xmlns:dcterms="http://purl.org/dc/terms/"xmlns:dcmitype="http://purl.org/dc/dcmitype/"xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:creator>${props.created_by}</dc:creator><cp:lastModifiedBy>${props.modified_by}</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">2024-02-10T10:24:19Z</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">2024-02-10T10:24:36Z</dcterms:modified></cp:coreProperties>'
 }
