@@ -17,21 +17,15 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout Latest V
-        uses: actions/checkout@v4
+      - name: Setup Vlang
+        uses: vlang/setup-v@v1.3
         with:
-          repository: vlang/v
-          path: v
+          stable: true
 
       - name: Checkout the XLSX module
         uses: actions/checkout@v4
         with:
           path: xlsx
-
-      - name: Build V
-        run: |
-          cd v && make
-          ./v symlink -githubci && git clone ../xlsx/ ~/.vmodules/xlsx
 
       - name: Run tests
         run: cd xlsx && v test .
