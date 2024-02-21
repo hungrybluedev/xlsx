@@ -15,8 +15,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-14]
     runs-on: ${{ matrix.os }}
-    if: >
-      github.event_name != 'push'|| github.event.ref == 'refs/heads/master' || github.event.repository.full_name != 'hungrybluedev/xlsx'
 
     steps:
       - name: Checkout Latest V
