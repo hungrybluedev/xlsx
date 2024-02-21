@@ -137,19 +137,19 @@ pub fn CoreProperties.parse(content string) !CoreProperties {
 	mut created_at := time.Time{}
 	mut modified_at := time.Time{}
 
-	creator_tags := extract_first_element_by_tag(core_properties_node, 'dc:creator')!
-	created_by = extract_first_child_as_string(creator_tags)!
+	creator_tag := extract_first_element_by_tag(core_properties_node, 'dc:creator')!
+	created_by = extract_first_child_as_string(creator_tag)!
 
-	modified_by_tags := extract_first_element_by_tag(core_properties_node, 'cp:lastModifiedBy')!
-	modified_by = extract_first_child_as_string(modified_by_tags)!
+	modified_by_tag := extract_first_element_by_tag(core_properties_node, 'cp:lastModifiedBy')!
+	modified_by = extract_first_child_as_string(modified_by_tag)!
 
-	created_at_tags := extract_first_element_by_tag(core_properties_node, 'dcterms:created')!
-	created_at = time.parse_iso8601(extract_first_child_as_string(created_at_tags)!) or {
+	created_at_tag := extract_first_element_by_tag(core_properties_node, 'dcterms:created')!
+	created_at = time.parse_iso8601(extract_first_child_as_string(created_at_tag)!) or {
 		return error('Invalid core properties XML. Failed to parse created time.')
 	}
 
-	modified_at_tags := extract_first_element_by_tag(core_properties_node, 'dcterms:modified')!
-	modified_at = time.parse_iso8601(extract_first_child_as_string(modified_at_tags)!) or {
+	modified_at_tag := extract_first_element_by_tag(core_properties_node, 'dcterms:modified')!
+	modified_at = time.parse_iso8601(extract_first_child_as_string(modified_at_tag)!) or {
 		return error('Invalid core properties XML. Failed to parse modified time.')
 	}
 
@@ -158,4 +158,169 @@ pub fn CoreProperties.parse(content string) !CoreProperties {
 	}
 
 	return CoreProperties{created_by, modified_by, created_at, modified_at}
+}
+
+pub struct HeadingPair {
+	name  string
+	count int
+}
+
+pub fn (pair HeadingPair) str() string {
+	return '<vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>${pair.name}</vt:lpstr></vt:variant><vt:variant><vt:i4>${pair.count}</vt:i4></vt:variant></vt:vector>'
+}
+
+fn HeadingPair.parse(node xml.XMLNode) ![]HeadingPair {
+	mut pairs := []HeadingPair{}
+
+	vector_tags := node.get_elements_by_tag('vt:vector')
+	for vector_tag in vector_tags {
+		variant_tags := vector_tag.get_elements_by_tag('vt:variant')
+		if variant_tags.len != 2 {
+			return error('Invalid app properties XML. Expected two <vt:variant> elements.')
+		}
+
+		name_tag := variant_tags[0].get_elements_by_tag('vt:lpstr')
+		if name_tag.len != 1 {
+			return error('Invalid app properties XML. Expected a single <vt:lpstr> element.')
+		}
+		name := name_tag[0].children[0] as string
+
+		count_tag := variant_tags[1].get_elements_by_tag('vt:i4')
+		if count_tag.len != 1 {
+			return error('Invalid app properties XML. Expected a single <vt:i4> element.')
+		}
+		count_text := count_tag[0].children[0] as string
+		count := count_text.int()
+
+		pairs << HeadingPair{name, count}
+	}
+
+	return pairs
+}
+
+fn encode_heading_pairs(pairs []HeadingPair) string {
+	mut result := strings.new_builder(256)
+
+	result.write_string('<HeadingPairs>')
+	for pair in pairs {
+		result.write_string(pair.str())
+	}
+	result.write_string('</HeadingPairs>')
+
+	return result.str()
+}
+
+pub struct TitlesOfParts {
+	entity string
+}
+
+pub fn (title TitlesOfParts) str() string {
+	return '<vt:lpstr>${title.entity}</vt:lpstr>'
+}
+
+fn encode_titles_of_parts(titles []TitlesOfParts) string {
+	mut result := strings.new_builder(128)
+
+	result.write_string('<TitlesOfParts><vt:vector size="${titles.len}" baseType="lpstr">')
+	for title in titles {
+		result.write_string(title.str())
+	}
+	result.write_string('</vt:vector></TitlesOfParts>')
+
+	return result.str()
+}
+
+fn TitlesOfParts.parse(node xml.XMLNode) ![]TitlesOfParts {
+	mut titles := []TitlesOfParts{}
+
+	lpstr_tags := node.get_elements_by_tag('vt:lpstr')
+	for tag in lpstr_tags {
+		titles << TitlesOfParts{tag.children[0] as string}
+	}
+
+	return titles
+}
+
+pub struct AppProperties {
+	application        string
+	doc_security       string
+	scale_crop         bool
+	links_up_to_date   bool
+	shared_doc         bool
+	hyperlinks_changed bool
+	app_version        string
+	company            string
+	heading_pairs      []HeadingPair
+	titles_of_parts    []TitlesOfParts
+}
+
+pub fn (prop AppProperties) str() string {
+	return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>${prop.application}</Application><DocSecurity>${prop.doc_security}</DocSecurity><ScaleCrop>${prop.scale_crop}</ScaleCrop>${encode_heading_pairs(prop.heading_pairs)}${encode_titles_of_parts(prop.titles_of_parts)}<Company>${prop.company}</Company><LinksUpToDate>${prop.links_up_to_date}</LinksUpToDate><SharedDoc>${prop.shared_doc}</SharedDoc><HyperlinksChanged>${prop.hyperlinks_changed}</HyperlinksChanged><AppVersion>${prop.app_version}</AppVersion></Properties>'
+}
+
+pub fn AppProperties.parse(content string) !AppProperties {
+	doc := xml.XMLDocument.from_string(content) or {
+		return error('Failed to parse app properties XML.')
+	}
+
+	properties_nodes := doc.get_elements_by_tag('Properties')
+	if properties_nodes.len != 1 {
+		return error('Invalid app properties XML. Expected a single <Properties> element.')
+	}
+
+	properties_node := properties_nodes[0]
+
+	application_tag := extract_first_element_by_tag(properties_node, 'Application')!
+	application := extract_first_child_as_string(application_tag)!
+
+	doc_security_tag := extract_first_element_by_tag(properties_node, 'DocSecurity')!
+	doc_security := extract_first_child_as_string(doc_security_tag)!
+	if doc_security != '0' && doc_security != '1' {
+		return error('Invalid app properties XML. Expected a "0" or "1" value for <DocSecurity>.')
+	}
+
+	scale_crop_tag := extract_first_element_by_tag(properties_node, 'ScaleCrop')!
+	scale_crop_text := extract_first_child_as_string(scale_crop_tag)!
+	scale_crop := scale_crop_text == 'true'
+
+	links_up_to_date_tag := extract_first_element_by_tag(properties_node, 'LinksUpToDate')!
+	links_up_to_date_text := extract_first_child_as_string(links_up_to_date_tag)!
+	links_up_to_date := links_up_to_date_text == 'true'
+
+	shared_doc_tag := extract_first_element_by_tag(properties_node, 'SharedDoc')!
+	shared_doc_text := extract_first_child_as_string(shared_doc_tag)!
+	shared_doc := shared_doc_text == 'true'
+
+	hyperlinks_changed_tag := extract_first_element_by_tag(properties_node, 'HyperlinksChanged')!
+	hyperlinks_changed_text := extract_first_child_as_string(hyperlinks_changed_tag)!
+	hyperlinks_changed := hyperlinks_changed_text == 'true'
+
+	app_version_tag := extract_first_element_by_tag(properties_node, 'AppVersion')!
+	app_version := extract_first_child_as_string(app_version_tag)!
+
+	company_tag := extract_first_element_by_tag(properties_node, 'Company')!
+	company := extract_first_child_as_string(company_tag) or { '' }
+
+	heading_pairs_tag := extract_first_element_by_tag(properties_node, 'HeadingPairs')!
+	heading_pairs := HeadingPair.parse(heading_pairs_tag) or {
+		return error('Invalid app properties XML. Failed to parse heading pairs.\n${err}')
+	}
+
+	titles_of_parts_tag := extract_first_element_by_tag(properties_node, 'TitlesOfParts')!
+	titles_of_parts := TitlesOfParts.parse(titles_of_parts_tag) or {
+		return error('Invalid app properties XML. Failed to parse titles of parts.\n${err}')
+	}
+
+	return AppProperties{
+		application: application
+		doc_security: doc_security
+		scale_crop: scale_crop
+		links_up_to_date: links_up_to_date
+		shared_doc: shared_doc
+		hyperlinks_changed: hyperlinks_changed
+		app_version: app_version
+		company: company
+		heading_pairs: heading_pairs
+		titles_of_parts: titles_of_parts
+	}
 }

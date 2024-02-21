@@ -135,3 +135,32 @@ fn test_core_properties() {
 		assert core_properties.str() == core_content
 	}
 }
+
+fn test_app_properties() {
+	app_content := '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Microsoft Excel</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>2</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="2" baseType="lpstr"><vt:lpstr>Sample Weather Info</vt:lpstr><vt:lpstr>Sample Altitude Info</vt:lpstr></vt:vector></TitlesOfParts><Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>16.0300</AppVersion></Properties>'
+
+	app_properties := xlsx.AppProperties.parse(app_content)!
+	expected_properties := xlsx.AppProperties{
+		application: 'Microsoft Excel'
+		doc_security: '0'
+		scale_crop: false
+		heading_pairs: [
+			xlsx.HeadingPair{
+				name: 'Worksheets'
+				count: 2
+			},
+		]
+		titles_of_parts: [
+			xlsx.TitlesOfParts{'Sample Weather Info'},
+			xlsx.TitlesOfParts{'Sample Altitude Info'},
+		]
+		company: ''
+		links_up_to_date: false
+		shared_doc: false
+		hyperlinks_changed: false
+		app_version: '16.0300'
+	}
+
+	assert app_properties == expected_properties
+	assert app_properties.str() == app_content
+}
