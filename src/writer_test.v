@@ -90,6 +90,22 @@ fn test_sheet_set_formula_stores_formula() ! {
 	assert sheet.rows[0].cells[0].cell_type == .number_type
 }
 
+fn test_sheet_set_date_stores_date_with_style() ! {
+	mut doc := Document.new()
+	sheet_id := doc.add_sheet('Test')
+	mut sheet := doc.get_sheet_mut(sheet_id)?
+
+	loc := Location.from_encoding('E5')!
+	// Excel date 46023 = 2026-01-01
+	sheet.set_date(loc, 46023)
+
+	assert sheet.rows.len == 1
+	assert sheet.rows[0].cells.len == 1
+	assert sheet.rows[0].cells[0].value == '46023', 'date should be stored as number'
+	assert sheet.rows[0].cells[0].cell_type == .number_type, 'date should be number type'
+	assert sheet.rows[0].cells[0].style_id == 1, 'date should have style_id=1 for date formatting'
+}
+
 fn test_sheet_multiple_cells_same_row() ! {
 	mut doc := Document.new()
 	sheet_id := doc.add_sheet('Test')
