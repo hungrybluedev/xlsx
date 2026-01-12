@@ -41,6 +41,20 @@ pub enum CellType {
 	number_type
 }
 
+// ThemeFill represents a theme-based fill color with tint
+// Theme colors are defined by the Excel theme (0-9 typically)
+// Tint values adjust brightness: positive values make lighter, negative darker
+pub struct ThemeFill {
+pub:
+	theme int // Theme color index (e.g., 3=blue, 5=cyan, 8=green, 9=orange)
+	tint  f64 // Tint value (-1.0 to 1.0, positive = lighter)
+}
+
+// Returns a unique key string for this fill (used for deduplication)
+pub fn (f ThemeFill) to_key() string {
+	return 'theme:${f.theme}:${f.tint}'
+}
+
 // Currency represents supported currency formats for cell formatting
 pub enum Currency {
 	usd // US Dollar ($)
@@ -95,9 +109,10 @@ pub:
 	cell_type CellType
 	location  Location
 	value     string
-	formula   string    // Optional: formula expression (e.g., "C4*D4")
-	style_id  int       // Style index for formatting (0=default, 1=date)
-	currency  ?Currency // Optional: currency for currency-formatted cells
+	formula   string     // Optional: formula expression (e.g., "C4*D4")
+	style_id  int        // Style index for formatting (0=default, 1=date)
+	currency  ?Currency  // Optional: currency for currency-formatted cells
+	fill      ?ThemeFill // Optional: background fill color
 }
 
 pub struct DataFrame {

@@ -124,3 +124,55 @@ pub fn (mut sheet Sheet) set_formula_with_style(loc Location, formula string, st
 		style_id:  style_id
 	}
 }
+
+// Sets a numeric cell with a background fill color
+pub fn (mut sheet Sheet) set_number_with_fill(loc Location, value int, fill ThemeFill) {
+	sheet.ensure_row_exists(loc.row)
+	row_idx := sheet.find_row_index(loc.row)
+	sheet.rows[row_idx].cells << Cell{
+		cell_type: .number_type
+		location:  loc
+		value:     value.str()
+		fill:      fill
+	}
+}
+
+// Sets a date cell with a background fill color
+pub fn (mut sheet Sheet) set_date_with_fill(loc Location, excel_date int, fill ThemeFill) {
+	sheet.ensure_row_exists(loc.row)
+	row_idx := sheet.find_row_index(loc.row)
+	sheet.rows[row_idx].cells << Cell{
+		cell_type: .number_type
+		location:  loc
+		value:     excel_date.str()
+		style_id:  1 // Date format style
+		fill:      fill
+	}
+}
+
+// Sets a formula cell with a background fill color (no currency)
+pub fn (mut sheet Sheet) set_formula_with_fill(loc Location, formula string, fill ThemeFill) {
+	sheet.ensure_row_exists(loc.row)
+	row_idx := sheet.find_row_index(loc.row)
+	sheet.rows[row_idx].cells << Cell{
+		cell_type: .number_type
+		location:  loc
+		value:     '' // Value will be computed by Excel
+		formula:   formula
+		fill:      fill
+	}
+}
+
+// Sets a formula cell with currency formatting and a background fill color
+pub fn (mut sheet Sheet) set_formula_currency_with_fill(loc Location, formula string, currency Currency, fill ThemeFill) {
+	sheet.ensure_row_exists(loc.row)
+	row_idx := sheet.find_row_index(loc.row)
+	sheet.rows[row_idx].cells << Cell{
+		cell_type: .number_type
+		location:  loc
+		value:     '' // Value will be computed by Excel
+		formula:   formula
+		currency:  currency
+		fill:      fill
+	}
+}

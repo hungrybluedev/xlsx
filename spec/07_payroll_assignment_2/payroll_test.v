@@ -1,4 +1,4 @@
-import xlsx { Currency, Location }
+import xlsx { Location }
 import os
 
 // Employee data structure
@@ -68,13 +68,16 @@ fn build_payroll_document() !xlsx.Document {
 		sheet.set_formula(Location.from_encoding('E${row}')!, 'IF(D${row}>40,D${row}-40,0)')
 
 		// Column F: Pay = Hourly Wage * Hours Worked
-		sheet.set_formula_currency(Location.from_encoding('F${row}')!, 'C${row}*D${row}', .gbp)
+		sheet.set_formula_currency(Location.from_encoding('F${row}')!, 'C${row}*D${row}',
+			.gbp)
 
 		// Column G: Overtime Bonus = 0.5 * Hourly Wage * Overtime Hours
-		sheet.set_formula_currency(Location.from_encoding('G${row}')!, '0.5*C${row}*E${row}', .gbp)
+		sheet.set_formula_currency(Location.from_encoding('G${row}')!, '0.5*C${row}*E${row}',
+			.gbp)
 
 		// Column H: Total = Pay + Overtime Bonus
-		sheet.set_formula_currency(Location.from_encoding('H${row}')!, 'F${row}+G${row}', .gbp)
+		sheet.set_formula_currency(Location.from_encoding('H${row}')!, 'F${row}+G${row}',
+			.gbp)
 	}
 
 	// Row 24: Empty (skip)

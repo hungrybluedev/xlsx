@@ -1,4 +1,4 @@
-import xlsx { Currency, Location }
+import xlsx { Location }
 import os
 
 // Employee data structure

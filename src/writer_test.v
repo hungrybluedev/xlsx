@@ -274,3 +274,114 @@ fn test_sheet_set_formula_with_style_stores_formula_and_style() ! {
 	assert sheet.rows[0].cells[0].cell_type == .number_type
 	assert sheet.rows[0].cells[0].style_id == 2, 'formula should have style_id=2'
 }
+
+fn test_theme_fill_creation() {
+	fill := ThemeFill{
+		theme: 3
+		tint:  0.75
+	}
+	assert fill.theme == 3
+	assert fill.tint == 0.75
+}
+
+fn test_theme_fill_to_key() {
+	fill := ThemeFill{
+		theme: 3
+		tint:  0.75
+	}
+	key := fill.to_key()
+	assert key == 'theme:3:0.75', 'key should encode theme and tint'
+}
+
+fn test_sheet_set_number_with_fill() ! {
+	mut doc := Document.new()
+	sheet_id := doc.add_sheet('Test')
+	mut sheet := doc.get_sheet_mut(sheet_id)?
+
+	loc := Location.from_encoding('D4')!
+	fill := ThemeFill{
+		theme: 3
+		tint:  0.75
+	}
+	sheet.set_number_with_fill(loc, 39, fill)
+
+	assert sheet.rows.len == 1
+	assert sheet.rows[0].cells.len == 1
+	assert sheet.rows[0].cells[0].value == '39'
+	assert sheet.rows[0].cells[0].cell_type == .number_type
+	cell_fill := sheet.rows[0].cells[0].fill or { return error('fill should be set') }
+	assert cell_fill.theme == 3, 'fill theme should be 3'
+	assert cell_fill.tint == 0.75, 'fill tint should be 0.75'
+}
+
+fn test_sheet_set_date_with_fill() ! {
+	mut doc := Document.new()
+	sheet_id := doc.add_sheet('Test')
+	mut sheet := doc.get_sheet_mut(sheet_id)?
+
+	loc := Location.from_encoding('D3')!
+	fill := ThemeFill{
+		theme: 3
+		tint:  0.75
+	}
+	sheet.set_date_with_fill(loc, 46023, fill)
+
+	assert sheet.rows.len == 1
+	assert sheet.rows[0].cells.len == 1
+	assert sheet.rows[0].cells[0].value == '46023'
+	assert sheet.rows[0].cells[0].style_id == 1, 'date should have style_id=1'
+	cell_fill := sheet.rows[0].cells[0].fill or { return error('fill should be set') }
+	assert cell_fill.theme == 3
+}
+
+fn test_sheet_set_formula_with_fill() ! {
+	mut doc := Document.new()
+	sheet_id := doc.add_sheet('Test')
+	mut sheet := doc.get_sheet_mut(sheet_id)?
+
+	loc := Location.from_encoding('I4')!
+	fill := ThemeFill{
+		theme: 5
+		tint:  0.6
+	}
+	sheet.set_formula_with_fill(loc, 'IF(D4>40,D4-40,0)', fill)
+
+	assert sheet.rows.len == 1
+	assert sheet.rows[0].cells.len == 1
+	assert sheet.rows[0].cells[0].formula == 'IF(D4>40,D4-40,0)'
+	cell_fill := sheet.rows[0].cells[0].fill or { return error('fill should be set') }
+	assert cell_fill.theme == 5
+	assert cell_fill.tint == 0.6
+}
+
+fn test_sheet_set_formula_currency_with_fill() ! {
+	mut doc := Document.new()
+	sheet_id := doc.add_sheet('Test')
+	mut sheet := doc.get_sheet_mut(sheet_id)?
+
+	loc := Location.from_encoding('N4')!
+	fill := ThemeFill{
+		theme: 9
+		tint:  0.6
+	}
+	sheet.set_formula_currency_with_fill(loc, r'$C4*D4', .gbp, fill)
+
+	assert sheet.rows.len == 1
+	assert sheet.rows[0].cells.len == 1
+	assert sheet.rows[0].cells[0].formula == r'$C4*D4'
+	assert sheet.rows[0].cells[0].currency? == Currency.gbp
+	cell_fill := sheet.rows[0].cells[0].fill or { return error('fill should be set') }
+	assert cell_fill.theme == 9
+	assert cell_fill.tint == 0.6
+}
+
+fn test_formula_with_absolute_reference() ! {
+	mut doc := Document.new()
+	sheet_id := doc.add_sheet('Test')
+	mut sheet := doc.get_sheet_mut(sheet_id)?
+
+	// Test that $ character is preserved in formulas (use raw string r'')
+	sheet.set_formula(Location.from_encoding('N4')!, r'$C4*D4')
+
+	assert sheet.rows[0].cells[0].formula == r'$C4*D4', 'absolute reference should be preserved'
+}
