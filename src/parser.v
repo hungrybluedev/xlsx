@@ -31,14 +31,23 @@ fn load_shared_strings(path string, shared_strings_path string) ![]string {
 
 	all_defined_strings := strings_doc.get_elements_by_tag('si')
 	for definition in all_defined_strings {
+		if definition.children.len == 0 {
+			return error('Invalid shared string definition: empty <si> element')
+		}
 		t_element := definition.children[0]
 		if t_element !is xml.XMLNode || (t_element as xml.XMLNode).name != 't' {
-			return error('Invalid shared string definition: ${definition}')
+			return error('Invalid shared string definition: expected <t> element, found: ${definition}')
 		}
 
-		content := (t_element as xml.XMLNode).children[0]
+		t_node := t_element as xml.XMLNode
+		if t_node.children.len == 0 {
+			// Empty string - this is valid
+			shared_strings << ''
+			continue
+		}
+		content := t_node.children[0]
 		if content !is string {
-			return error('Invalid shared string definition: ${definition}')
+			return error('Invalid shared string definition: expected text content, found: ${definition}')
 		}
 		shared_strings << (content as string)
 	}
@@ -141,10 +150,10 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sh
 		row_label := row.attributes['r'] or { return error('Row does not include location.') }
 		row_index := row_label.int() - 1
 
-		span_string := row.attributes['spans'] or { '0:0' }
+		span_string := row.attributes['spans'] or { '1:1' }
 
 		span := span_string.split(':').map(it.int())
-		cell_count := span[1] - span[0] + 1
+		cell_count := if span.len >= 2 { span[1] - span[0] + 1 } else { 1 }
 
 		mut cells := []Cell{cap: cell_count}
 
@@ -158,19 +167,29 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sh
 					}
 					matching_tags := child.children.filter(it is xml.XMLNode && it.name == 'v').map(it as xml.XMLNode)
 					if matching_tags.len > 1 {
-						return error('Expected only one value: ${child}')
+						return error('Expected only one <v> element in cell, found ${matching_tags.len}')
+					}
+					if matching_tags.len == 0 {
+						// Cell with no value - skip it
+						continue
 					}
 					value_tag := matching_tags[0]
 
 					cell_type := CellType.from_code(child.attributes['t'] or { 'n' })!
-					value := if cell_type == .string_type {
-						shared_strings[(value_tag.children[0] as string).int()]
+					value := if value_tag.children.len == 0 {
+						'' // Empty value
+					} else if cell_type == .string_type {
+						idx := (value_tag.children[0] as string).int()
+						if idx >= shared_strings.len {
+							return error('Invalid shared string index ${idx}, only ${shared_strings.len} strings available')
+						}
+						shared_strings[idx]
 					} else {
 						value_tag.children[0] as string
 					}
 
 					location_string := child.attributes['r'] or {
-						return error('Cell does not include location.')
+						return error('Cell does not include location reference (r attribute)')
 					}
 
 					cells << Cell{
@@ -180,7 +199,8 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sh
 					}
 				}
 				else {
-					return error('Invalid cell of row: ${child}')
+					// Non-XML node children (whitespace, etc.) are ignored
+					continue
 				}
 			}
 		}

@@ -1,5 +1,68 @@
 module xlsx
 
+// CellOptions provides a unified way to configure cell properties.
+// Use this with set_cell_with_options for complex cell configurations
+// instead of the many specialized setter methods.
+pub struct CellOptions {
+pub:
+	fill       ?ThemeFill // Background fill color
+	currency   ?Currency  // Currency formatting
+	style_id   int        // Style ID (use style_id_date for dates)
+	is_formula bool       // Whether value is a formula
+}
+
+// Sets a cell with flexible options at the given location.
+// This is a unified method that can replace most other setters.
+//
+// Example usage:
+// ```v
+// // Simple string cell
+// sheet.set_cell_with_options(loc, 'Hello', CellOptions{})
+//
+// // Number with fill
+// sheet.set_cell_with_options(loc, '42', CellOptions{ fill: my_fill })
+//
+// // Formula with currency and fill
+// sheet.set_cell_with_options(loc, 'SUM(A1:A10)', CellOptions{
+//     is_formula: true
+//     currency: Currency{ symbol: '$', decimal_places: 2 }
+//     fill: my_fill
+// })
+// ```
+pub fn (mut sheet Sheet) set_cell_with_options(loc Location, value string, opts CellOptions) {
+	sheet.ensure_row_exists(loc.row)
+	row_idx := sheet.find_row_index(loc.row)
+
+	cell_type := if opts.is_formula { CellType.number_type } else { CellType.string_type }
+	formula := if opts.is_formula { value } else { '' }
+	cell_value := if opts.is_formula { '' } else { value }
+
+	sheet.rows[row_idx].cells << Cell{
+		cell_type: cell_type
+		location:  loc
+		value:     cell_value
+		formula:   formula
+		style_id:  opts.style_id
+		currency:  opts.currency
+		fill:      opts.fill
+	}
+}
+
+// Sets a numeric cell with flexible options at the given location.
+pub fn (mut sheet Sheet) set_number_with_options(loc Location, value f64, opts CellOptions) {
+	sheet.ensure_row_exists(loc.row)
+	row_idx := sheet.find_row_index(loc.row)
+
+	sheet.rows[row_idx].cells << Cell{
+		cell_type: .number_type
+		location:  loc
+		value:     value.str()
+		style_id:  opts.style_id
+		currency:  opts.currency
+		fill:      opts.fill
+	}
+}
+
 // Sets a string cell at the given location
 pub fn (mut sheet Sheet) set_cell(loc Location, value string) {
 	sheet.ensure_row_exists(loc.row)
@@ -55,7 +118,7 @@ pub fn (mut sheet Sheet) set_date(loc Location, excel_date int) {
 		cell_type: .number_type
 		location:  loc
 		value:     excel_date.str()
-		style_id:  1 // Date format style
+		style_id:  style_id_date
 	}
 }
 
@@ -145,7 +208,7 @@ pub fn (mut sheet Sheet) set_date_with_fill(loc Location, excel_date int, fill T
 		cell_type: .number_type
 		location:  loc
 		value:     excel_date.str()
-		style_id:  1 // Date format style
+		style_id:  style_id_date
 		fill:      fill
 	}
 }

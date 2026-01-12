@@ -5,6 +5,38 @@ import compress.szip
 import rand
 import strings
 
+// Excel format constants
+// Excel reserves custom numFmtIds starting at 164
+const custom_num_fmt_id_start = 164
+
+// Excel's built-in date format ID
+const excel_date_format_id = 16
+
+// Reserved fill IDs (0=none, 1=gray125)
+const reserved_fill_count = 2
+
+// Default style IDs
+const style_id_default = 0
+const style_id_date = 1
+
+// Sentinel values for bounds calculation
+const bounds_init_min = 999999
+const bounds_init_max = 0
+
+// Default page margins (inches)
+const default_margin_left = '0.7'
+const default_margin_right = '0.7'
+const default_margin_top = '0.75'
+const default_margin_bottom = '0.75'
+const default_margin_header = '0.3'
+const default_margin_footer = '0.3'
+
+// Default row height
+const default_row_height = '15'
+
+// Random string charset for temp directories
+const rand_charset = 'abcdefghijklmnopqrstuvwxyz0123456789'
+
 // StyleKey represents a unique style combination (numFmtId + fillId)
 struct StyleKey {
 	num_fmt_id int
@@ -98,7 +130,7 @@ pub fn (doc Document) to_file(path string) ! {
 				if fill := cell.fill {
 					key := fill.to_key()
 					if key !in fill_map {
-						fill_map[key] = fills.len + 2 // fillId 0,1 are reserved
+						fill_map[key] = fills.len + reserved_fill_count
 						fills << fill
 					}
 				}
@@ -106,7 +138,7 @@ pub fn (doc Document) to_file(path string) ! {
 				if currency := cell.currency {
 					format_code := currency.format_code()
 					if format_code !in num_fmt_map {
-						num_fmt_map[format_code] = 164 + num_fmts.len
+						num_fmt_map[format_code] = custom_num_fmt_id_start + num_fmts.len
 						num_fmts << format_code
 					}
 				}
@@ -124,14 +156,14 @@ pub fn (doc Document) to_file(path string) ! {
 		num_fmt_id: 0
 		fill_id:    0
 	}
-	style_map['0:0'] = 0
+	style_map['0:0'] = style_id_default
 
 	// Add date style (styleId=1, numFmtId=16, fillId=0)
 	styles << StyleKey{
-		num_fmt_id: 16
+		num_fmt_id: excel_date_format_id
 		fill_id:    0
 	}
-	style_map['16:0'] = 1
+	style_map['${excel_date_format_id}:0'] = style_id_date
 
 	// Second pass: build unique style combinations
 	for _, sheet in doc.sheets {
@@ -139,8 +171,8 @@ pub fn (doc Document) to_file(path string) ! {
 			for cell in row.cells {
 				// Determine numFmtId
 				mut num_fmt_id := 0
-				if cell.style_id == 1 {
-					num_fmt_id = 16 // Date format
+				if cell.style_id == style_id_date {
+					num_fmt_id = excel_date_format_id
 				}
 				if currency := cell.currency {
 					num_fmt_id = num_fmt_map[currency.format_code()]
@@ -196,7 +228,7 @@ pub fn (doc Document) to_file(path string) ! {
 // Generate a random string for temp directory names
 fn rand_string(len int) string {
 	mut result := strings.new_builder(len)
-	chars := 'abcdefghijklmnopqrstuvwxyz0123456789'
+	chars := rand_charset
 	for _ in 0 .. len {
 		result.write_u8(chars[rand.intn(chars.len) or { 0 }])
 	}
@@ -303,190 +335,6 @@ fn generate_shared_strings(strings_list []string) string {
 	return sb.str()
 }
 
-// Generate xl/styles.xml with dynamic currency formats
-// currency_style_map: maps format_code -> style_id (style_id starts at 2)
-fn generate_styles(currency_style_map map[string]int) string {
-	mut sb := strings.new_builder(1024)
-	sb.write_string('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>')
-	sb.write_string('<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">')
-
-	// Custom number formats section (only if we have currencies)
-	// Custom numFmtIds start at 164
-	if currency_style_map.len > 0 {
-		sb.write_string('<numFmts count="${currency_style_map.len}">')
-		mut num_fmt_id := 164
-		for format_code, _ in currency_style_map {
-			// Escape special XML characters in format code
-			escaped_code := xml_escape(format_code)
-			sb.write_string('<numFmt numFmtId="${num_fmt_id}" formatCode="${escaped_code}"/>')
-			num_fmt_id++
-		}
-		sb.write_string('</numFmts>')
-	}
-
-	// Fonts - at least one required
-	sb.write_string('<fonts count="1">')
-	sb.write_string('<font><sz val="11"/><name val="Calibri"/></font>')
-	sb.write_string('</fonts>')
-
-	// Fills - at least two required (none and gray125)
-	sb.write_string('<fills count="2">')
-	sb.write_string('<fill><patternFill patternType="none"/></fill>')
-	sb.write_string('<fill><patternFill patternType="gray125"/></fill>')
-	sb.write_string('</fills>')
-
-	// Borders - at least one required
-	sb.write_string('<borders count="1">')
-	sb.write_string('<border><left/><right/><top/><bottom/><diagonal/></border>')
-	sb.write_string('</borders>')
-
-	// Cell style formats
-	sb.write_string('<cellStyleXfs count="1">')
-	sb.write_string('<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>')
-	sb.write_string('</cellStyleXfs>')
-
-	// Cell formats (cellXfs)
-	// Index 0 = default, Index 1 = date, Index 2+ = currencies
-	cell_xf_count := 2 + currency_style_map.len
-	sb.write_string('<cellXfs count="${cell_xf_count}">')
-	sb.write_string('<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>') // s="0" default
-	sb.write_string('<xf numFmtId="16" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>') // s="1" date
-
-	// Add currency formats in order of their style_id (which matches iteration order)
-	mut num_fmt_id := 164
-	for _, _ in currency_style_map {
-		sb.write_string('<xf numFmtId="${num_fmt_id}" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>')
-		num_fmt_id++
-	}
-	sb.write_string('</cellXfs>')
-
-	// Cell styles
-	sb.write_string('<cellStyles count="1">')
-	sb.write_string('<cellStyle name="Normal" xfId="0" builtinId="0"/>')
-	sb.write_string('</cellStyles>')
-
-	sb.write_string('</styleSheet>')
-	return sb.str()
-}
-
-// Generate xl/worksheets/sheet{N}.xml
-// currency_style_map: maps format_code -> style_id for currency cells
-fn generate_sheet_xml(sheet Sheet, string_index_map map[string]int, currency_style_map map[string]int) string {
-	mut sb := strings.new_builder(2048)
-	sb.write_string('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>')
-	sb.write_string('<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">')
-
-	// Calculate dimension and global spans
-	mut dim_ref := 'A1'
-	mut global_min_col := 0
-	mut global_max_col := 0
-
-	if sheet.rows.len > 0 {
-		mut min_row := 999999
-		mut max_row := 0
-		global_min_col = 999999
-		global_max_col = 0
-
-		for row in sheet.rows {
-			if row.row_index < min_row {
-				min_row = row.row_index
-			}
-			if row.row_index > max_row {
-				max_row = row.row_index
-			}
-			for cell in row.cells {
-				if cell.location.col < global_min_col {
-					global_min_col = cell.location.col
-				}
-				if cell.location.col > global_max_col {
-					global_max_col = cell.location.col
-				}
-			}
-		}
-
-		top_left := Location.from_cartesian(min_row, global_min_col) or { Location{} }
-		bottom_right := Location.from_cartesian(max_row, global_max_col) or { Location{} }
-		dim_ref = '${top_left.col_label}${top_left.row_label}:${bottom_right.col_label}${bottom_right.row_label}'
-	}
-
-	// Use consistent spans for all rows (based on sheet dimension)
-	global_spans := '${global_min_col + 1}:${global_max_col + 1}'
-
-	sb.write_string('<dimension ref="${dim_ref}"/>')
-
-	// Sheet views
-	sb.write_string('<sheetViews>')
-	sb.write_string('<sheetView tabSelected="1" workbookViewId="0"/>')
-	sb.write_string('</sheetViews>')
-
-	// Sheet format
-	sb.write_string('<sheetFormatPr defaultRowHeight="15"/>')
-
-	sb.write_string('<sheetData>')
-
-	// Sort rows by row_index
-	mut sorted_rows := sheet.rows.clone()
-	sorted_rows.sort(a.row_index < b.row_index)
-
-	for row in sorted_rows {
-		// Skip empty rows
-		if row.cells.len == 0 {
-			continue
-		}
-
-		row_num := row.row_index + 1 // Excel uses 1-based rows
-
-		sb.write_string('<row r="${row_num}" spans="${global_spans}">')
-
-		// Sort cells by column
-		mut sorted_cells := row.cells.clone()
-		sorted_cells.sort(a.location.col < b.location.col)
-
-		for cell in sorted_cells {
-			cell_ref := '${cell.location.col_label}${row_num}'
-
-			// Determine style_id: currency takes precedence, then style_id field
-			mut effective_style_id := cell.style_id
-			if currency := cell.currency {
-				format_code := currency.format_code()
-				if style_id := currency_style_map[format_code] {
-					effective_style_id = style_id
-				}
-			}
-
-			style_attr := if effective_style_id > 0 { ' s="${effective_style_id}"' } else { '' }
-
-			if cell.formula.len > 0 {
-				// Formula cell - include placeholder value (Excel will recalculate)
-				sb.write_string('<c r="${cell_ref}"${style_attr}><f>${xml_escape(cell.formula)}</f>')
-				if cell.value.len > 0 {
-					sb.write_string('<v>${cell.value}</v>')
-				} else {
-					sb.write_string('<v>0</v>')
-				}
-				sb.write_string('</c>')
-			} else if cell.cell_type == .string_type {
-				// String cell - reference shared strings
-				idx := string_index_map[cell.value]
-				sb.write_string('<c r="${cell_ref}"${style_attr} t="s"><v>${idx}</v></c>')
-			} else {
-				// Number cell (with optional style for dates, currencies, etc.)
-				sb.write_string('<c r="${cell_ref}"${style_attr}><v>${cell.value}</v></c>')
-			}
-		}
-
-		sb.write_string('</row>')
-	}
-
-	sb.write_string('</sheetData>')
-
-	// Page margins (commonly expected)
-	sb.write_string('<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>')
-
-	sb.write_string('</worksheet>')
-	return sb.str()
-}
-
 // Escape XML special characters
 fn xml_escape(s string) string {
 	return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"',
@@ -561,7 +409,7 @@ fn generate_styles_v2(num_fmts []string, fills []ThemeFill, styles []StyleKey) s
 	if num_fmts.len > 0 {
 		sb.write_string('<numFmts count="${num_fmts.len}">')
 		for i, format_code in num_fmts {
-			num_fmt_id := 164 + i
+			num_fmt_id := custom_num_fmt_id_start + i
 			escaped_code := xml_escape(format_code)
 			sb.write_string('<numFmt numFmtId="${num_fmt_id}" formatCode="${escaped_code}"/>')
 		}
@@ -580,7 +428,7 @@ fn generate_styles_v2(num_fmts []string, fills []ThemeFill, styles []StyleKey) s
 	sb.write_string('</fonts>')
 
 	// Fills - two required (none and gray125) plus custom fills
-	fill_count := 2 + fills.len
+	fill_count := reserved_fill_count + fills.len
 	sb.write_string('<fills count="${fill_count}">')
 	sb.write_string('<fill><patternFill patternType="none"/></fill>')
 	sb.write_string('<fill><patternFill patternType="gray125"/></fill>')
@@ -637,10 +485,10 @@ fn generate_sheet_xml_v2(sheet Sheet, string_index_map map[string]int, num_fmt_m
 	mut global_max_col := 0
 
 	if sheet.rows.len > 0 {
-		mut min_row := 999999
-		mut max_row := 0
-		global_min_col = 999999
-		global_max_col = 0
+		mut min_row := bounds_init_min
+		mut max_row := bounds_init_max
+		global_min_col = bounds_init_min
+		global_max_col = bounds_init_max
 
 		for row in sheet.rows {
 			if row.row_index < min_row {
@@ -675,7 +523,7 @@ fn generate_sheet_xml_v2(sheet Sheet, string_index_map map[string]int, num_fmt_m
 	sb.write_string('</sheetViews>')
 
 	// Sheet format
-	sb.write_string('<sheetFormatPr defaultRowHeight="15"/>')
+	sb.write_string('<sheetFormatPr defaultRowHeight="${default_row_height}"/>')
 
 	sb.write_string('<sheetData>')
 
@@ -702,8 +550,8 @@ fn generate_sheet_xml_v2(sheet Sheet, string_index_map map[string]int, num_fmt_m
 
 			// Determine numFmtId
 			mut num_fmt_id := 0
-			if cell.style_id == 1 {
-				num_fmt_id = 16 // Date format
+			if cell.style_id == style_id_date {
+				num_fmt_id = excel_date_format_id
 			}
 			if currency := cell.currency {
 				num_fmt_id = num_fmt_map[currency.format_code()]
@@ -746,7 +594,7 @@ fn generate_sheet_xml_v2(sheet Sheet, string_index_map map[string]int, num_fmt_m
 	sb.write_string('</sheetData>')
 
 	// Page margins (commonly expected)
-	sb.write_string('<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>')
+	sb.write_string('<pageMargins left="${default_margin_left}" right="${default_margin_right}" top="${default_margin_top}" bottom="${default_margin_bottom}" header="${default_margin_header}" footer="${default_margin_footer}"/>')
 
 	sb.write_string('</worksheet>')
 	return sb.str()
