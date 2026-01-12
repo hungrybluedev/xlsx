@@ -2,12 +2,12 @@
 
 ## Description
 
-A package in pure V for reading and writing (soon) Excel files in the XLSX format.
+A package in pure V for reading and writing Excel files in the XLSX format.
 
 ## Roadmap
 
 - [x] Read XLSX files.
-- [ ] Write XLSX files.
+- [x] Write XLSX files (basic support).
 
 ## Installation
 
@@ -21,7 +21,7 @@ v install https://github.com/hungrybluedev/xlsx
 
 Take the `data.xlsx` file from the `examples/01_marksheet` directory for this example.
 
-```v
+```v ignore
 import xlsx
 
 fn main() {
@@ -112,7 +112,40 @@ Modify the example to suit your needs.
 
 ### Writing XLSX files
 
-_Coming soon!_
+```v ignore
+import xlsx
+
+fn main() {
+	// Create a new document
+	mut doc := xlsx.Document.new()
+
+	// Add a sheet and get a mutable reference
+	sheet_id := doc.add_sheet('Sheet1')
+	mut sheet := doc.get_sheet_mut(sheet_id) or { return }
+
+	// Set string cells
+	sheet.set_cell(xlsx.Location.from_encoding('A1')!, 'Name')
+	sheet.set_cell(xlsx.Location.from_encoding('B1')!, 'Score')
+
+	// Set numeric cells
+	sheet.set_number(xlsx.Location.from_encoding('B2')!, 95)
+	sheet.set_number_f64(xlsx.Location.from_encoding('B3')!, 87.5)
+
+	// Set dates (Excel serial date format)
+	sheet.set_date(xlsx.Location.from_encoding('C2')!, 46023) // Jan 1, 2026
+
+	// Set formulas
+	sheet.set_formula(xlsx.Location.from_encoding('B4')!, 'SUM(B2:B3)')
+
+	// Set currency values (supports usd, gbp, eur, jpy, cny, inr)
+	sheet.set_currency(xlsx.Location.from_encoding('D2')!, 1234.56, .usd)
+
+	// Save to file
+	doc.to_file('output.xlsx')!
+}
+```
+
+For more examples including background fills and styled formulas, see the `spec/` directory.
 
 ## Get Involved
 

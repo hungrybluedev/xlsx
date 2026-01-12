@@ -1,14 +1,19 @@
 module xlsx
 
 pub fn (sheet Sheet) get_cell(location Location) ?Cell {
-	if location.row >= sheet.rows.len {
-		return none
+	// Find row by row_index (not array index) to handle sparse rows
+	for row in sheet.rows {
+		if row.row_index == location.row {
+			// Find cell by column index
+			for cell in row.cells {
+				if cell.location.col == location.col {
+					return cell
+				}
+			}
+			return none // Row exists but cell doesn't
+		}
 	}
-	target_row := sheet.rows[location.row]
-	if location.col >= target_row.cells.len {
-		return none
-	}
-	return target_row.cells[location.col]
+	return none // Row doesn't exist (sparse)
 }
 
 pub fn (sheet Sheet) get_all_data() !DataFrame {
@@ -19,26 +24,41 @@ pub fn (sheet Sheet) get_data(top_left Location, bottom_right Location) !DataFra
 	if top_left.row == 0 && bottom_right.row == 0 && sheet.rows.len == 0 {
 		return DataFrame{}
 	}
-	if top_left.row >= sheet.rows.len {
-		return error('top_left.row out of range')
+
+	// Build a map from row_index to array index for efficient lookup
+	mut row_index_map := map[int]int{}
+	for i, row in sheet.rows {
+		row_index_map[row.row_index] = i
 	}
-	if bottom_right.row > sheet.rows.len {
-		return error('bottom_right.row out of range')
-	}
-	if top_left.col >= sheet.rows[top_left.row].cells.len {
-		return error('top_left.col out of range')
-	}
-	if bottom_right.col > sheet.rows[bottom_right.row].cells.len {
-		return error('bottom_right.col out of range')
-	}
+
 	mut row_values := [][]string{cap: bottom_right.row - top_left.row + 1}
 
-	for index in top_left.row .. bottom_right.row + 1 {
-		row := sheet.rows[index]
+	for row_index in top_left.row .. bottom_right.row + 1 {
 		mut cell_values := []string{cap: bottom_right.col - top_left.col + 1}
-		for column in top_left.col .. bottom_right.col + 1 {
-			cell_values << row.cells[column].value
+
+		if row_index in row_index_map {
+			row := sheet.rows[row_index_map[row_index]]
+
+			// Build cell lookup for this row
+			mut cell_col_map := map[int]string{}
+			for cell in row.cells {
+				cell_col_map[cell.location.col] = cell.value
+			}
+
+			for col_index in top_left.col .. bottom_right.col + 1 {
+				if col_index in cell_col_map {
+					cell_values << cell_col_map[col_index]
+				} else {
+					cell_values << '' // Sparse cell
+				}
+			}
+		} else {
+			// Sparse row - fill with empty strings
+			for _ in top_left.col .. bottom_right.col + 1 {
+				cell_values << ''
+			}
 		}
+
 		row_values << cell_values
 	}
 
