@@ -2,64 +2,68 @@ module xlsx
 
 import time
 
-// CellOptions provides a unified way to configure cell properties.
-// Use this with set_cell_with_options for complex cell configurations
-// instead of the many specialized setter methods.
-pub struct CellOptions {
-pub:
-	fill       ?ThemeFill // Background fill color
-	currency   ?Currency  // Currency formatting
-	style_id   int        // Style ID (use style_id_date for dates)
-	is_formula bool       // Whether value is a formula
-}
-
-// Sets a cell with flexible options at the given location.
-// This is a unified method that can replace most other setters.
+// build_cell creates a cell at the given location using the builder configuration.
+// This is the primary method for creating styled cells with any combination of options.
 //
 // Example usage:
 // ```v
-// // Simple string cell
-// sheet.set_cell_with_options(loc, 'Hello', CellOptions{})
-//
 // // Number with fill
-// sheet.set_cell_with_options(loc, '42', CellOptions{ fill: my_fill })
+// sheet.build_cell(loc, number: 42, fill: my_fill)
 //
 // // Formula with currency and fill
-// sheet.set_cell_with_options(loc, 'SUM(A1:A10)', CellOptions{
-//     is_formula: true
-//     currency: Currency{ symbol: '$', decimal_places: 2 }
-//     fill: my_fill
-// })
+// sheet.build_cell(loc, formula: 'SUM(A1:A10)', currency: .gbp, fill: header_fill)
+//
+// // Text with fill
+// sheet.build_cell(loc, text: 'Header', fill: highlight)
+//
+// // Date with fill
+// sheet.build_cell(loc, date: my_date, fill: alt_row)
 // ```
-pub fn (mut sheet Sheet) set_cell_with_options(loc Location, value string, opts CellOptions) {
+@[params]
+pub fn (mut sheet Sheet) build_cell(loc Location, opts CellBuilder) {
+	sheet.add_cell_internal(loc, opts)
+}
+
+// Internal implementation for all cell creation. Single source of truth.
+fn (mut sheet Sheet) add_cell_internal(loc Location, opts CellBuilder) {
 	sheet.ensure_row_exists(loc.row)
 	row_idx := sheet.find_row_index(loc.row)
 
-	cell_type := if opts.is_formula { CellType.number_type } else { CellType.string_type }
-	formula := if opts.is_formula { value } else { '' }
-	cell_value := if opts.is_formula { '' } else { value }
+	// Determine cell type and value based on which content field is set
+	mut cell_type := CellType.string_type
+	mut value := ''
+	mut formula_str := ''
+	mut effective_style_id := opts.style_id
+
+	if f := opts.formula {
+		cell_type = .number_type
+		formula_str = f
+		value = ''
+	} else if d := opts.date {
+		cell_type = .number_type
+		value = time_to_excel_date(d).str()
+		if effective_style_id == 0 {
+			effective_style_id = style_id_date
+		}
+	} else if n := opts.number {
+		cell_type = .number_type
+		// Format whole numbers without decimal places (e.g., 39 not 39.0)
+		if n == f64(int(n)) {
+			value = int(n).str()
+		} else {
+			value = n.str()
+		}
+	} else if t := opts.text {
+		cell_type = .string_type
+		value = t
+	}
 
 	sheet.rows[row_idx].cells << Cell{
 		cell_type: cell_type
 		location:  loc
-		value:     cell_value
-		formula:   formula
-		style_id:  opts.style_id
-		currency:  opts.currency
-		fill:      opts.fill
-	}
-}
-
-// Sets a numeric cell with flexible options at the given location.
-pub fn (mut sheet Sheet) set_number_with_options(loc Location, value f64, opts CellOptions) {
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type
-		location:  loc
-		value:     value.str()
-		style_id:  opts.style_id
+		value:     value
+		formula:   formula_str
+		style_id:  effective_style_id
 		currency:  opts.currency
 		fill:      opts.fill
 	}
@@ -67,13 +71,7 @@ pub fn (mut sheet Sheet) set_number_with_options(loc Location, value f64, opts C
 
 // Sets a string cell at the given location
 pub fn (mut sheet Sheet) set_cell(loc Location, value string) {
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .string_type
-		location:  loc
-		value:     value
-	}
+	sheet.add_cell_internal(loc, CellBuilder{ text: value })
 }
 
 // Sets a numeric cell at the given location (int version)
@@ -89,40 +87,24 @@ pub fn (mut sheet Sheet) set_number(loc Location, value int) {
 
 // Sets a numeric cell at the given location (f64 version)
 pub fn (mut sheet Sheet) set_number_f64(loc Location, value f64) {
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type
-		location:  loc
-		value:     value.str()
-	}
+	sheet.add_cell_internal(loc, CellBuilder{ number: value })
 }
 
 // Sets a formula cell at the given location
 pub fn (mut sheet Sheet) set_formula(loc Location, formula string) {
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type // Formulas are typically numbers
-		location:  loc
-		value:     '' // Value will be computed by Excel
-		formula:   formula
-	}
+	sheet.add_cell_internal(loc, CellBuilder{ formula: formula })
 }
 
 // Sets a date cell at the given location using a time.Time value.
 // The time will be converted to Excel's serial date format internally.
 // style_id=1 applies date formatting (e.g., "01-Jan")
 pub fn (mut sheet Sheet) set_date(loc Location, date time.Time) {
-	excel_date := time_to_excel_date(date)
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type
-		location:  loc
-		value:     excel_date.str()
-		style_id:  style_id_date
-	}
+	sheet.add_cell_internal(loc, CellBuilder{ date: date })
+}
+
+// Sets a currency cell at the given location with the specified currency format
+pub fn (mut sheet Sheet) set_currency(loc Location, value f64, currency Currency) {
+	sheet.add_cell_internal(loc, CellBuilder{ number: value, currency: currency })
 }
 
 // Ensures a row exists at the given index, creating it if necessary
@@ -149,97 +131,4 @@ fn (sheet Sheet) find_row_index(row_index int) int {
 		}
 	}
 	return -1 // Should not happen if ensure_row_exists was called
-}
-
-// Sets a currency cell at the given location with the specified currency format
-// The currency format will be applied when the file is written
-pub fn (mut sheet Sheet) set_currency(loc Location, value f64, currency Currency) {
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type
-		location:  loc
-		value:     value.str()
-		currency:  currency
-	}
-}
-
-// Sets a formula cell with currency formatting
-pub fn (mut sheet Sheet) set_formula_currency(loc Location, formula string, currency Currency) {
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type
-		location:  loc
-		value:     '' // Value will be computed by Excel
-		formula:   formula
-		currency:  currency
-	}
-}
-
-// Sets a formula cell with a specific style at the given location
-// Kept for backward compatibility with non-currency styles
-pub fn (mut sheet Sheet) set_formula_with_style(loc Location, formula string, style_id int) {
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type
-		location:  loc
-		value:     '' // Value will be computed by Excel
-		formula:   formula
-		style_id:  style_id
-	}
-}
-
-// Sets a numeric cell with a background fill color
-pub fn (mut sheet Sheet) set_number_with_fill(loc Location, value int, fill ThemeFill) {
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type
-		location:  loc
-		value:     value.str()
-		fill:      fill
-	}
-}
-
-// Sets a date cell with a background fill color
-pub fn (mut sheet Sheet) set_date_with_fill(loc Location, date time.Time, fill ThemeFill) {
-	excel_date := time_to_excel_date(date)
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type
-		location:  loc
-		value:     excel_date.str()
-		style_id:  style_id_date
-		fill:      fill
-	}
-}
-
-// Sets a formula cell with a background fill color (no currency)
-pub fn (mut sheet Sheet) set_formula_with_fill(loc Location, formula string, fill ThemeFill) {
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type
-		location:  loc
-		value:     '' // Value will be computed by Excel
-		formula:   formula
-		fill:      fill
-	}
-}
-
-// Sets a formula cell with currency formatting and a background fill color
-pub fn (mut sheet Sheet) set_formula_currency_with_fill(loc Location, formula string, currency Currency, fill ThemeFill) {
-	sheet.ensure_row_exists(loc.row)
-	row_idx := sheet.find_row_index(loc.row)
-	sheet.rows[row_idx].cells << Cell{
-		cell_type: .number_type
-		location:  loc
-		value:     '' // Value will be computed by Excel
-		formula:   formula
-		currency:  currency
-		fill:      fill
-	}
 }

@@ -74,55 +74,61 @@ fn build_payroll_document() !xlsx.Document {
 		sheet.set_formula(Location.from_encoding('E${row}')!, 'IF(D${row}>40,D${row}-40,0)')
 
 		// Column F: Pay = Hourly Wage * Hours Worked
-		sheet.set_formula_currency(Location.from_encoding('F${row}')!, 'C${row}*D${row}',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('F${row}')!,
+			formula:  'C${row}*D${row}'
+			currency: .gbp
+		)
 
 		// Column G: Overtime Bonus = 0.5 * Hourly Wage * Overtime Hours
-		sheet.set_formula_currency(Location.from_encoding('G${row}')!, '0.5*C${row}*E${row}',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('G${row}')!,
+			formula:  '0.5*C${row}*E${row}'
+			currency: .gbp
+		)
 
 		// Column H: Total = Pay + Overtime Bonus
-		sheet.set_formula_currency(Location.from_encoding('H${row}')!, 'F${row}+G${row}',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('H${row}')!,
+			formula:  'F${row}+G${row}'
+			currency: .gbp
+		)
 	}
 
 	// Row 24: Empty (skip)
 
 	// Row 25: Max
 	sheet.set_cell(Location.from_encoding('A25')!, 'Max')
-	sheet.set_formula_currency(Location.from_encoding('C25')!, 'MAX(C4:C23)', .gbp)
+	sheet.build_cell(Location.from_encoding('C25')!, formula: 'MAX(C4:C23)', currency: .gbp)
 	sheet.set_formula(Location.from_encoding('D25')!, 'MAX(D4:D23)')
 	// E25: Empty (no Max for overtime hours count)
-	sheet.set_formula_currency(Location.from_encoding('F25')!, 'MAX(F4:F23)', .gbp)
-	sheet.set_formula_currency(Location.from_encoding('G25')!, 'MAX(G4:G23)', .gbp)
-	sheet.set_formula_currency(Location.from_encoding('H25')!, 'MAX(H4:H23)', .gbp)
+	sheet.build_cell(Location.from_encoding('F25')!, formula: 'MAX(F4:F23)', currency: .gbp)
+	sheet.build_cell(Location.from_encoding('G25')!, formula: 'MAX(G4:G23)', currency: .gbp)
+	sheet.build_cell(Location.from_encoding('H25')!, formula: 'MAX(H4:H23)', currency: .gbp)
 
 	// Row 26: Min
 	sheet.set_cell(Location.from_encoding('A26')!, 'Min')
-	sheet.set_formula_currency(Location.from_encoding('C26')!, 'MIN(C4:C23)', .gbp)
+	sheet.build_cell(Location.from_encoding('C26')!, formula: 'MIN(C4:C23)', currency: .gbp)
 	sheet.set_formula(Location.from_encoding('D26')!, 'MIN(D4:D23)')
 	// E26: Empty (no Min for overtime hours count)
-	sheet.set_formula_currency(Location.from_encoding('F26')!, 'MIN(F4:F23)', .gbp)
-	sheet.set_formula_currency(Location.from_encoding('G26')!, 'MIN(G4:G23)', .gbp)
-	sheet.set_formula_currency(Location.from_encoding('H26')!, 'MIN(H4:H23)', .gbp)
+	sheet.build_cell(Location.from_encoding('F26')!, formula: 'MIN(F4:F23)', currency: .gbp)
+	sheet.build_cell(Location.from_encoding('G26')!, formula: 'MIN(G4:G23)', currency: .gbp)
+	sheet.build_cell(Location.from_encoding('H26')!, formula: 'MIN(H4:H23)', currency: .gbp)
 
 	// Row 27: Average
 	sheet.set_cell(Location.from_encoding('A27')!, 'Average')
-	sheet.set_formula_currency(Location.from_encoding('C27')!, 'AVERAGE(C4:C23)', .gbp)
+	sheet.build_cell(Location.from_encoding('C27')!, formula: 'AVERAGE(C4:C23)', currency: .gbp)
 	sheet.set_formula(Location.from_encoding('D27')!, 'AVERAGE(D4:D23)')
 	// E27: Empty (no Average for overtime hours count)
-	sheet.set_formula_currency(Location.from_encoding('F27')!, 'AVERAGE(F4:F23)', .gbp)
-	sheet.set_formula_currency(Location.from_encoding('G27')!, 'AVERAGE(G4:G23)', .gbp)
-	sheet.set_formula_currency(Location.from_encoding('H27')!, 'AVERAGE(H4:H23)', .gbp)
+	sheet.build_cell(Location.from_encoding('F27')!, formula: 'AVERAGE(F4:F23)', currency: .gbp)
+	sheet.build_cell(Location.from_encoding('G27')!, formula: 'AVERAGE(G4:G23)', currency: .gbp)
+	sheet.build_cell(Location.from_encoding('H27')!, formula: 'AVERAGE(H4:H23)', currency: .gbp)
 
 	// Row 28: Total
 	sheet.set_cell(Location.from_encoding('A28')!, 'Total')
-	sheet.set_formula_currency(Location.from_encoding('C28')!, 'SUM(C4:C23)', .gbp)
+	sheet.build_cell(Location.from_encoding('C28')!, formula: 'SUM(C4:C23)', currency: .gbp)
 	sheet.set_formula(Location.from_encoding('D28')!, 'SUM(D4:D23)')
 	// E28: Empty (no Total for overtime hours count)
-	sheet.set_formula_currency(Location.from_encoding('F28')!, 'SUM(F4:F23)', .gbp)
-	sheet.set_formula_currency(Location.from_encoding('G28')!, 'SUM(G4:G23)', .gbp)
-	sheet.set_formula_currency(Location.from_encoding('H28')!, 'SUM(H4:H23)', .gbp)
+	sheet.build_cell(Location.from_encoding('F28')!, formula: 'SUM(F4:F23)', currency: .gbp)
+	sheet.build_cell(Location.from_encoding('G28')!, formula: 'SUM(G4:G23)', currency: .gbp)
+	sheet.build_cell(Location.from_encoding('H28')!, formula: 'SUM(H4:H23)', currency: .gbp)
 
 	return doc
 }

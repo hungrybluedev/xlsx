@@ -235,13 +235,13 @@ fn test_sheet_set_currency_with_enum() ! {
 	assert sheet.rows[0].cells[0].currency? == Currency.gbp, 'should have gbp currency set'
 }
 
-fn test_sheet_set_formula_currency() ! {
+fn test_build_cell_formula_with_currency() ! {
 	mut doc := Document.new()
 	sheet_id := doc.add_sheet('Test')
 	mut sheet := doc.get_sheet_mut(sheet_id)?
 
 	loc := Location.from_encoding('E4')!
-	sheet.set_formula_currency(loc, 'C4*D4', .usd)
+	sheet.build_cell(loc, formula: 'C4*D4', currency: .usd)
 
 	assert sheet.rows.len == 1
 	assert sheet.rows[0].cells.len == 1
@@ -266,13 +266,13 @@ fn test_multiple_currencies_in_document() ! {
 	assert sheet.rows[0].cells[2].currency? == Currency.eur
 }
 
-fn test_sheet_set_formula_with_style_stores_formula_and_style() ! {
+fn test_build_cell_formula_with_style() ! {
 	mut doc := Document.new()
 	sheet_id := doc.add_sheet('Test')
 	mut sheet := doc.get_sheet_mut(sheet_id)?
 
 	loc := Location.from_encoding('E4')!
-	sheet.set_formula_with_style(loc, 'C4*D4', 2)
+	sheet.build_cell(loc, formula: 'C4*D4', style_id: 2)
 
 	assert sheet.rows.len == 1
 	assert sheet.rows[0].cells.len == 1
@@ -299,7 +299,7 @@ fn test_theme_fill_to_key() {
 	assert key == 'theme:3:0.75', 'key should encode theme and tint'
 }
 
-fn test_sheet_set_number_with_fill() ! {
+fn test_build_cell_number_with_fill() ! {
 	mut doc := Document.new()
 	sheet_id := doc.add_sheet('Test')
 	mut sheet := doc.get_sheet_mut(sheet_id)?
@@ -309,7 +309,7 @@ fn test_sheet_set_number_with_fill() ! {
 		theme: 3
 		tint:  0.75
 	}
-	sheet.set_number_with_fill(loc, 39, fill)
+	sheet.build_cell(loc, number: 39, fill: fill)
 
 	assert sheet.rows.len == 1
 	assert sheet.rows[0].cells.len == 1
@@ -320,7 +320,7 @@ fn test_sheet_set_number_with_fill() ! {
 	assert cell_fill.tint == 0.75, 'fill tint should be 0.75'
 }
 
-fn test_sheet_set_date_with_fill() ! {
+fn test_build_cell_date_with_fill() ! {
 	mut doc := Document.new()
 	sheet_id := doc.add_sheet('Test')
 	mut sheet := doc.get_sheet_mut(sheet_id)?
@@ -335,7 +335,7 @@ fn test_sheet_set_date_with_fill() ! {
 		month: 1
 		day:   1
 	}
-	sheet.set_date_with_fill(loc, jan_1_2026, fill)
+	sheet.build_cell(loc, date: jan_1_2026, fill: fill)
 
 	assert sheet.rows.len == 1
 	assert sheet.rows[0].cells.len == 1
@@ -345,7 +345,7 @@ fn test_sheet_set_date_with_fill() ! {
 	assert cell_fill.theme == 3
 }
 
-fn test_sheet_set_formula_with_fill() ! {
+fn test_build_cell_formula_with_fill() ! {
 	mut doc := Document.new()
 	sheet_id := doc.add_sheet('Test')
 	mut sheet := doc.get_sheet_mut(sheet_id)?
@@ -355,7 +355,7 @@ fn test_sheet_set_formula_with_fill() ! {
 		theme: 5
 		tint:  0.6
 	}
-	sheet.set_formula_with_fill(loc, 'IF(D4>40,D4-40,0)', fill)
+	sheet.build_cell(loc, formula: 'IF(D4>40,D4-40,0)', fill: fill)
 
 	assert sheet.rows.len == 1
 	assert sheet.rows[0].cells.len == 1
@@ -365,7 +365,7 @@ fn test_sheet_set_formula_with_fill() ! {
 	assert cell_fill.tint == 0.6
 }
 
-fn test_sheet_set_formula_currency_with_fill() ! {
+fn test_build_cell_formula_currency_with_fill() ! {
 	mut doc := Document.new()
 	sheet_id := doc.add_sheet('Test')
 	mut sheet := doc.get_sheet_mut(sheet_id)?
@@ -375,7 +375,7 @@ fn test_sheet_set_formula_currency_with_fill() ! {
 		theme: 9
 		tint:  0.6
 	}
-	sheet.set_formula_currency_with_fill(loc, r'$C4*D4', .gbp, fill)
+	sheet.build_cell(loc, formula: r'$C4*D4', currency: .gbp, fill: fill)
 
 	assert sheet.rows.len == 1
 	assert sheet.rows[0].cells.len == 1

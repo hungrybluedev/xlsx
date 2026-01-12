@@ -67,36 +67,31 @@ fn test_readme_writer_example() ! {
 	assert data.raw_data[0][1] == 'Score', 'B1 should be Score'
 }
 
-// Test the new CellOptions API
-fn test_cell_options_api() ! {
+// Test the new CellBuilder API
+fn test_cell_builder_api() ! {
 	mut doc := xlsx.Document.new()
-	sheet_id := doc.add_sheet('OptionsTest')
+	sheet_id := doc.add_sheet('BuilderTest')
 	mut sheet := doc.get_sheet_mut(sheet_id) or { return error('Failed to get sheet') }
 
-	// Test simple string cell with options
-	sheet.set_cell_with_options(xlsx.Location.from_encoding('A1')!, 'Hello', xlsx.CellOptions{})
+	// Test simple string cell with build_cell
+	sheet.build_cell(xlsx.Location.from_encoding('A1')!, text: 'Hello')
 
 	// Test number with fill
 	fill := xlsx.ThemeFill{
 		theme: 4
 		tint:  0.6
 	}
-	sheet.set_number_with_options(xlsx.Location.from_encoding('B1')!, 42.5, xlsx.CellOptions{
-		fill: fill
-	})
+	sheet.build_cell(xlsx.Location.from_encoding('B1')!, number: 42.5, fill: fill)
 
 	// Test formula with currency
-	sheet.set_cell_with_options(xlsx.Location.from_encoding('C1')!, 'A1+B1', xlsx.CellOptions{
-		is_formula: true
-		currency:   .usd
-	})
+	sheet.build_cell(xlsx.Location.from_encoding('C1')!, formula: 'A1+B1', currency: .usd)
 
 	// Verify cells were created
 	assert sheet.rows.len == 1, 'Should have 1 row'
 	assert sheet.rows[0].cells.len == 3, 'Should have 3 cells'
 
 	// Save and verify
-	temp_path := os.join_path(os.temp_dir(), 'test_cell_options.xlsx')
+	temp_path := os.join_path(os.temp_dir(), 'test_cell_builder.xlsx')
 	defer {
 		os.rm(temp_path) or {}
 	}

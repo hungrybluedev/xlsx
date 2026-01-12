@@ -1,5 +1,7 @@
 module xlsx
 
+import time
+
 pub struct Document {
 pub mut:
 	shared_strings []string
@@ -113,6 +115,30 @@ pub:
 	style_id  int        // Style index for formatting (0=default, 1=date)
 	currency  ?Currency  // Optional: currency for currency-formatted cells
 	fill      ?ThemeFill // Optional: background fill color
+}
+
+// CellBuilder provides a composable way to create cells with any combination of content and styling.
+// Use with Sheet.build_cell() for styled cells, or use the simple set_* methods for unstyled cells.
+//
+// Content fields (set exactly one):
+//   - text: string content
+//   - number: numeric content (f64)
+//   - formula: formula expression (e.g., "SUM(A1:A10)")
+//   - date: date content (converted to Excel serial format)
+//
+// Styling fields (all optional, composable):
+//   - fill: background fill color
+//   - currency: currency formatting
+//   - style_id: custom style ID (0=default, 1=date format)
+pub struct CellBuilder {
+pub:
+	text     ?string
+	number   ?f64
+	formula  ?string
+	date     ?time.Time
+	fill     ?ThemeFill
+	currency ?Currency
+	style_id int
 }
 
 pub struct DataFrame {

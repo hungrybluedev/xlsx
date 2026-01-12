@@ -100,35 +100,44 @@ fn build_payroll_document() !xlsx.Document {
 	for week in 0 .. 5 {
 		col := hours_cols[week]
 		week_date := base_date.add_days(week * 7)
-		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, week_date, fill_hours_worked)
+		sheet.build_cell(Location.from_encoding('${col}3')!,
+			date: week_date
+			fill: fill_hours_worked
+		)
 	}
 
 	// Overtime Hours dates (I3-M3)
 	for week in 0 .. 5 {
 		col := overtime_cols[week]
 		week_date := base_date.add_days(week * 7)
-		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, week_date, fill_overtime_hours)
+		sheet.build_cell(Location.from_encoding('${col}3')!,
+			date: week_date
+			fill: fill_overtime_hours
+		)
 	}
 
 	// Pay dates (N3-R3)
 	for week in 0 .. 5 {
 		col := pay_cols[week]
 		week_date := base_date.add_days(week * 7)
-		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, week_date, fill_pay)
+		sheet.build_cell(Location.from_encoding('${col}3')!, date: week_date, fill: fill_pay)
 	}
 
 	// Overtime Bonus dates (S3-W3)
 	for week in 0 .. 5 {
 		col := bonus_cols[week]
 		week_date := base_date.add_days(week * 7)
-		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, week_date, fill_overtime_bonus)
+		sheet.build_cell(Location.from_encoding('${col}3')!,
+			date: week_date
+			fill: fill_overtime_bonus
+		)
 	}
 
 	// Total dates (X3-AB3)
 	for week in 0 .. 5 {
 		col := total_cols[week]
 		week_date := base_date.add_days(week * 7)
-		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, week_date, fill_total)
+		sheet.build_cell(Location.from_encoding('${col}3')!, date: week_date, fill: fill_total)
 	}
 
 	// Rows 4-23: Employee data (20 employees)
@@ -143,8 +152,10 @@ fn build_payroll_document() !xlsx.Document {
 		// Hours Worked (D-H) with light blue fill
 		for week in 0 .. 5 {
 			col := hours_cols[week]
-			sheet.set_number_with_fill(Location.from_encoding('${col}${row}')!, emp.hours_worked[week],
-				fill_hours_worked)
+			sheet.build_cell(Location.from_encoding('${col}${row}')!,
+				number: emp.hours_worked[week]
+				fill:   fill_hours_worked
+			)
 		}
 
 		// Overtime Hours (I-M) with light cyan fill - IF formula with absolute ref
@@ -152,8 +163,10 @@ fn build_payroll_document() !xlsx.Document {
 			hours_col := hours_cols[week]
 			ot_col := overtime_cols[week]
 			// Formula: IF(D4>40,D4-40,0) etc.
-			sheet.set_formula_with_fill(Location.from_encoding('${ot_col}${row}')!, 'IF(${hours_col}${row}>40,${hours_col}${row}-40,0)',
-				fill_overtime_hours)
+			sheet.build_cell(Location.from_encoding('${ot_col}${row}')!,
+				formula: 'IF(${hours_col}${row}>40,${hours_col}${row}-40,0)'
+				fill:    fill_overtime_hours
+			)
 		}
 
 		// Pay (N-R) with orange fill - absolute reference to hourly wage
@@ -161,8 +174,11 @@ fn build_payroll_document() !xlsx.Document {
 			hours_col := hours_cols[week]
 			pay_col := pay_cols[week]
 			// Formula: $C4*D4 (absolute reference to C column)
-			sheet.set_formula_currency_with_fill(Location.from_encoding('${pay_col}${row}')!,
-				r'$C' + '${row}*${hours_col}${row}', .gbp, fill_pay)
+			sheet.build_cell(Location.from_encoding('${pay_col}${row}')!,
+				formula:  r'$C' + '${row}*${hours_col}${row}'
+				currency: .gbp
+				fill:     fill_pay
+			)
 		}
 
 		// Overtime Bonus (S-W) with light orange fill
@@ -170,8 +186,11 @@ fn build_payroll_document() !xlsx.Document {
 			ot_col := overtime_cols[week]
 			bonus_col := bonus_cols[week]
 			// Formula: 0.5*$C4*I4 (50% of wage * overtime hours)
-			sheet.set_formula_currency_with_fill(Location.from_encoding('${bonus_col}${row}')!,
-				r'0.5*$C' + '${row}*${ot_col}${row}', .gbp, fill_overtime_bonus)
+			sheet.build_cell(Location.from_encoding('${bonus_col}${row}')!,
+				formula:  r'0.5*$C' + '${row}*${ot_col}${row}'
+				currency: .gbp
+				fill:     fill_overtime_bonus
+			)
 		}
 
 		// Total (X-AB) with green fill
@@ -180,116 +199,145 @@ fn build_payroll_document() !xlsx.Document {
 			bonus_col := bonus_cols[week]
 			total_col := total_cols[week]
 			// Formula: N4+S4 (pay + bonus)
-			sheet.set_formula_currency_with_fill(Location.from_encoding('${total_col}${row}')!,
-				'${pay_col}${row}+${bonus_col}${row}', .gbp, fill_total)
+			sheet.build_cell(Location.from_encoding('${total_col}${row}')!,
+				formula:  '${pay_col}${row}+${bonus_col}${row}'
+				currency: .gbp
+				fill:     fill_total
+			)
 		}
 
 		// January Pay (AD) - sum of all weekly totals
-		sheet.set_formula_currency(Location.from_encoding('AD${row}')!, 'SUM(X${row}:AB${row})',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('AD${row}')!,
+			formula:  'SUM(X${row}:AB${row})'
+			currency: .gbp
+		)
 	}
 
 	// Row 24: Empty (skip)
 
 	// Row 25: Max
 	sheet.set_cell(Location.from_encoding('A25')!, 'Max')
-	sheet.set_formula_currency(Location.from_encoding('C25')!, 'MAX(C4:C23)', .gbp)
+	sheet.build_cell(Location.from_encoding('C25')!, formula: 'MAX(C4:C23)', currency: .gbp)
 	for week in 0 .. 5 {
 		hours_col := hours_cols[week]
 		sheet.set_formula(Location.from_encoding('${hours_col}25')!, 'MAX(${hours_col}4:${hours_col}23)')
 	}
 	for week in 0 .. 5 {
 		pay_col := pay_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${pay_col}25')!, 'MAX(${pay_col}4:${pay_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${pay_col}25')!,
+			formula:  'MAX(${pay_col}4:${pay_col}23)'
+			currency: .gbp
+		)
 	}
 	for week in 0 .. 5 {
 		bonus_col := bonus_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${bonus_col}25')!, 'MAX(${bonus_col}4:${bonus_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${bonus_col}25')!,
+			formula:  'MAX(${bonus_col}4:${bonus_col}23)'
+			currency: .gbp
+		)
 	}
 	for week in 0 .. 5 {
 		total_col := total_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${total_col}25')!, 'MAX(${total_col}4:${total_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${total_col}25')!,
+			formula:  'MAX(${total_col}4:${total_col}23)'
+			currency: .gbp
+		)
 	}
 	// January Pay Max (AD25)
-	sheet.set_formula_currency(Location.from_encoding('AD25')!, 'MAX(AD4:AD23)', .gbp)
+	sheet.build_cell(Location.from_encoding('AD25')!, formula: 'MAX(AD4:AD23)', currency: .gbp)
 
 	// Row 26: Min
 	sheet.set_cell(Location.from_encoding('A26')!, 'Min')
-	sheet.set_formula_currency(Location.from_encoding('C26')!, 'MIN(C4:C23)', .gbp)
+	sheet.build_cell(Location.from_encoding('C26')!, formula: 'MIN(C4:C23)', currency: .gbp)
 	for week in 0 .. 5 {
 		hours_col := hours_cols[week]
 		sheet.set_formula(Location.from_encoding('${hours_col}26')!, 'MIN(${hours_col}4:${hours_col}23)')
 	}
 	for week in 0 .. 5 {
 		pay_col := pay_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${pay_col}26')!, 'MIN(${pay_col}4:${pay_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${pay_col}26')!,
+			formula:  'MIN(${pay_col}4:${pay_col}23)'
+			currency: .gbp
+		)
 	}
 	for week in 0 .. 5 {
 		bonus_col := bonus_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${bonus_col}26')!, 'MIN(${bonus_col}4:${bonus_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${bonus_col}26')!,
+			formula:  'MIN(${bonus_col}4:${bonus_col}23)'
+			currency: .gbp
+		)
 	}
 	for week in 0 .. 5 {
 		total_col := total_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${total_col}26')!, 'MIN(${total_col}4:${total_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${total_col}26')!,
+			formula:  'MIN(${total_col}4:${total_col}23)'
+			currency: .gbp
+		)
 	}
 	// January Pay Min (AD26)
-	sheet.set_formula_currency(Location.from_encoding('AD26')!, 'MIN(AD4:AD23)', .gbp)
+	sheet.build_cell(Location.from_encoding('AD26')!, formula: 'MIN(AD4:AD23)', currency: .gbp)
 
 	// Row 27: Average
 	sheet.set_cell(Location.from_encoding('A27')!, 'Average')
-	sheet.set_formula_currency(Location.from_encoding('C27')!, 'AVERAGE(C4:C23)', .gbp)
+	sheet.build_cell(Location.from_encoding('C27')!, formula: 'AVERAGE(C4:C23)', currency: .gbp)
 	for week in 0 .. 5 {
 		hours_col := hours_cols[week]
 		sheet.set_formula(Location.from_encoding('${hours_col}27')!, 'AVERAGE(${hours_col}4:${hours_col}23)')
 	}
 	for week in 0 .. 5 {
 		pay_col := pay_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${pay_col}27')!, 'AVERAGE(${pay_col}4:${pay_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${pay_col}27')!,
+			formula:  'AVERAGE(${pay_col}4:${pay_col}23)'
+			currency: .gbp
+		)
 	}
 	for week in 0 .. 5 {
 		bonus_col := bonus_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${bonus_col}27')!, 'AVERAGE(${bonus_col}4:${bonus_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${bonus_col}27')!,
+			formula:  'AVERAGE(${bonus_col}4:${bonus_col}23)'
+			currency: .gbp
+		)
 	}
 	for week in 0 .. 5 {
 		total_col := total_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${total_col}27')!, 'AVERAGE(${total_col}4:${total_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${total_col}27')!,
+			formula:  'AVERAGE(${total_col}4:${total_col}23)'
+			currency: .gbp
+		)
 	}
 	// January Pay Average (AD27)
-	sheet.set_formula_currency(Location.from_encoding('AD27')!, 'AVERAGE(AD4:AD23)', .gbp)
+	sheet.build_cell(Location.from_encoding('AD27')!, formula: 'AVERAGE(AD4:AD23)', currency: .gbp)
 
 	// Row 28: Total (Sum)
 	sheet.set_cell(Location.from_encoding('A28')!, 'Total')
-	sheet.set_formula_currency(Location.from_encoding('C28')!, 'SUM(C4:C23)', .gbp)
+	sheet.build_cell(Location.from_encoding('C28')!, formula: 'SUM(C4:C23)', currency: .gbp)
 	for week in 0 .. 5 {
 		hours_col := hours_cols[week]
 		sheet.set_formula(Location.from_encoding('${hours_col}28')!, 'SUM(${hours_col}4:${hours_col}23)')
 	}
 	for week in 0 .. 5 {
 		pay_col := pay_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${pay_col}28')!, 'SUM(${pay_col}4:${pay_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${pay_col}28')!,
+			formula:  'SUM(${pay_col}4:${pay_col}23)'
+			currency: .gbp
+		)
 	}
 	for week in 0 .. 5 {
 		bonus_col := bonus_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${bonus_col}28')!, 'SUM(${bonus_col}4:${bonus_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${bonus_col}28')!,
+			formula:  'SUM(${bonus_col}4:${bonus_col}23)'
+			currency: .gbp
+		)
 	}
 	for week in 0 .. 5 {
 		total_col := total_cols[week]
-		sheet.set_formula_currency(Location.from_encoding('${total_col}28')!, 'SUM(${total_col}4:${total_col}23)',
-			.gbp)
+		sheet.build_cell(Location.from_encoding('${total_col}28')!,
+			formula:  'SUM(${total_col}4:${total_col}23)'
+			currency: .gbp
+		)
 	}
 	// January Pay Total (AD28)
-	sheet.set_formula_currency(Location.from_encoding('AD28')!, 'SUM(AD4:AD23)', .gbp)
+	sheet.build_cell(Location.from_encoding('AD28')!, formula: 'SUM(AD4:AD23)', currency: .gbp)
 
 	return doc
 }
