@@ -26,6 +26,14 @@ bin/
 # Ignore backup XLSX files
 *~*.xlsx
 
+# Ignore extracted XLSX contents (used during testing/debugging)
+spec/**/extracted/
+spec/**/generated_output/
+spec/**/expected_structure/
+
+# Ignore generated output files
+spec/**/*_output.xlsx
+
 # Ignore scratch files
 scratch/
 scratch*
