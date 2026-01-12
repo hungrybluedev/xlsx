@@ -1,5 +1,6 @@
 import xlsx { Location, ThemeFill }
 import os
+import time
 
 // Employee data structure with 5 weeks of hours
 struct EmployeeWeekly {
@@ -89,43 +90,45 @@ fn build_payroll_document() !xlsx.Document {
 	sheet.set_cell(Location.from_encoding('C3')!, 'Hourly Wage')
 
 	// Date headers for each week (01-Jan to 29-Jan, +7 days each)
-	// Excel date: 46023 = 2026-01-01 (but displayed as 01-Jan in the file)
-	// Actually from the file, the dates are 46023 for first column
-	base_date := 46023
+	base_date := time.Time{
+		year:  2026
+		month: 1
+		day:   1
+	}
 
 	// Hours Worked dates (D3-H3)
 	for week in 0 .. 5 {
 		col := hours_cols[week]
-		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, base_date + (week * 7),
-			fill_hours_worked)
+		week_date := base_date.add_days(week * 7)
+		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, week_date, fill_hours_worked)
 	}
 
 	// Overtime Hours dates (I3-M3)
 	for week in 0 .. 5 {
 		col := overtime_cols[week]
-		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, base_date + (week * 7),
-			fill_overtime_hours)
+		week_date := base_date.add_days(week * 7)
+		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, week_date, fill_overtime_hours)
 	}
 
 	// Pay dates (N3-R3)
 	for week in 0 .. 5 {
 		col := pay_cols[week]
-		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, base_date + (week * 7),
-			fill_pay)
+		week_date := base_date.add_days(week * 7)
+		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, week_date, fill_pay)
 	}
 
 	// Overtime Bonus dates (S3-W3)
 	for week in 0 .. 5 {
 		col := bonus_cols[week]
-		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, base_date + (week * 7),
-			fill_overtime_bonus)
+		week_date := base_date.add_days(week * 7)
+		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, week_date, fill_overtime_bonus)
 	}
 
 	// Total dates (X3-AB3)
 	for week in 0 .. 5 {
 		col := total_cols[week]
-		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, base_date + (week * 7),
-			fill_total)
+		week_date := base_date.add_days(week * 7)
+		sheet.set_date_with_fill(Location.from_encoding('${col}3')!, week_date, fill_total)
 	}
 
 	// Rows 4-23: Employee data (20 employees)

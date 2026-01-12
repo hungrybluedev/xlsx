@@ -1,5 +1,7 @@
 module xlsx
 
+import time
+
 // CellOptions provides a unified way to configure cell properties.
 // Use this with set_cell_with_options for complex cell configurations
 // instead of the many specialized setter methods.
@@ -108,10 +110,11 @@ pub fn (mut sheet Sheet) set_formula(loc Location, formula string) {
 	}
 }
 
-// Sets a date cell at the given location (Excel serial date number)
-// Excel dates are stored as numbers: days since 1900-01-01 (with 1900 bug)
+// Sets a date cell at the given location using a time.Time value.
+// The time will be converted to Excel's serial date format internally.
 // style_id=1 applies date formatting (e.g., "01-Jan")
-pub fn (mut sheet Sheet) set_date(loc Location, excel_date int) {
+pub fn (mut sheet Sheet) set_date(loc Location, date time.Time) {
+	excel_date := time_to_excel_date(date)
 	sheet.ensure_row_exists(loc.row)
 	row_idx := sheet.find_row_index(loc.row)
 	sheet.rows[row_idx].cells << Cell{
@@ -201,7 +204,8 @@ pub fn (mut sheet Sheet) set_number_with_fill(loc Location, value int, fill Them
 }
 
 // Sets a date cell with a background fill color
-pub fn (mut sheet Sheet) set_date_with_fill(loc Location, excel_date int, fill ThemeFill) {
+pub fn (mut sheet Sheet) set_date_with_fill(loc Location, date time.Time, fill ThemeFill) {
+	excel_date := time_to_excel_date(date)
 	sheet.ensure_row_exists(loc.row)
 	row_idx := sheet.find_row_index(loc.row)
 	sheet.rows[row_idx].cells << Cell{

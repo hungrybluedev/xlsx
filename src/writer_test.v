@@ -1,6 +1,7 @@
 module xlsx
 
 import os
+import time
 
 // Unit tests for XLSX writer functionality
 
@@ -96,12 +97,17 @@ fn test_sheet_set_date_stores_date_with_style() ! {
 	mut sheet := doc.get_sheet_mut(sheet_id)?
 
 	loc := Location.from_encoding('E5')!
-	// Excel date 46023 = 2026-01-01
-	sheet.set_date(loc, 46023)
+	// January 1, 2026 = Excel serial date 46023
+	jan_1_2026 := time.Time{
+		year:  2026
+		month: 1
+		day:   1
+	}
+	sheet.set_date(loc, jan_1_2026)
 
 	assert sheet.rows.len == 1
 	assert sheet.rows[0].cells.len == 1
-	assert sheet.rows[0].cells[0].value == '46023', 'date should be stored as number'
+	assert sheet.rows[0].cells[0].value == '46023', 'date should be stored as Excel serial number'
 	assert sheet.rows[0].cells[0].cell_type == .number_type, 'date should be number type'
 	assert sheet.rows[0].cells[0].style_id == 1, 'date should have style_id=1 for date formatting'
 }
@@ -324,7 +330,12 @@ fn test_sheet_set_date_with_fill() ! {
 		theme: 3
 		tint:  0.75
 	}
-	sheet.set_date_with_fill(loc, 46023, fill)
+	jan_1_2026 := time.Time{
+		year:  2026
+		month: 1
+		day:   1
+	}
+	sheet.set_date_with_fill(loc, jan_1_2026, fill)
 
 	assert sheet.rows.len == 1
 	assert sheet.rows[0].cells.len == 1

@@ -1,6 +1,7 @@
 module main
 
 import os
+import time
 import xlsx
 
 // Test the example from README.md to ensure documentation stays accurate
@@ -20,8 +21,13 @@ fn test_readme_writer_example() ! {
 	sheet.set_number(xlsx.Location.from_encoding('B2')!, 95)
 	sheet.set_number_f64(xlsx.Location.from_encoding('B3')!, 87.5)
 
-	// Set dates (Excel serial date format)
-	sheet.set_date(xlsx.Location.from_encoding('C2')!, 46023) // Jan 1, 2026
+	// Set dates using time.Time
+	jan_1_2026 := time.Time{
+		year:  2026
+		month: 1
+		day:   1
+	}
+	sheet.set_date(xlsx.Location.from_encoding('C2')!, jan_1_2026)
 
 	// Set formulas
 	sheet.set_formula(xlsx.Location.from_encoding('B4')!, 'SUM(B2:B3)')

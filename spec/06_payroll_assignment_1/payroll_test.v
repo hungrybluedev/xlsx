@@ -1,5 +1,6 @@
 import xlsx { Location }
 import os
+import time
 
 // Employee data structure
 struct Employee {
@@ -51,7 +52,12 @@ fn build_payroll_document() !xlsx.Document {
 	sheet.set_cell(Location.from_encoding('B3')!, 'First Name')
 	sheet.set_cell(Location.from_encoding('C3')!, 'Hourly Wage')
 	// D3 contains a date (01-Jan) - use set_date for proper formatting
-	sheet.set_date(Location.from_encoding('D3')!, 46023) // Excel date for 01-Jan-2026
+	jan_1_2026 := time.Time{
+		year:  2026
+		month: 1
+		day:   1
+	}
+	sheet.set_date(Location.from_encoding('D3')!, jan_1_2026)
 
 	// Rows 4-23: Employee data (20 employees)
 	for i, emp in employees {
