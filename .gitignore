@@ -40,3 +40,6 @@ scratch*
 
 CLAUDE.md
 .claude
+
+# Ignore compiled example binaries
+examples/snippets/*_example
