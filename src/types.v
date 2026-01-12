@@ -1,7 +1,7 @@
 module xlsx
 
 pub struct Document {
-pub:
+pub mut:
 	shared_strings []string
 	sheets         map[int]Sheet
 }
@@ -24,6 +24,7 @@ pub struct Sheet {
 	Dimension
 pub:
 	name string
+pub mut:
 	rows []Row
 }
 
@@ -31,7 +32,8 @@ pub struct Row {
 pub:
 	row_index int
 	row_label string
-	cells     []Cell
+pub mut:
+	cells []Cell
 }
 
 pub enum CellType {
@@ -58,6 +60,7 @@ pub:
 	cell_type CellType
 	location  Location
 	value     string
+	formula   string // Optional: formula expression (e.g., "C4*D4")
 }
 
 pub struct DataFrame {
