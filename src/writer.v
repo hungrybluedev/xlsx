@@ -230,11 +230,13 @@ fn generate_styles() string {
 	sb.write_string('<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>')
 	sb.write_string('</cellStyleXfs>')
 
-	// Cell formats - index 0 is default, index 1 is date format
+	// Cell formats - index 0 is default, index 1 is date format, index 2 is GBP currency
 	// numFmtId 16 is built-in "d-mmm" format (e.g., "1-Jan")
-	sb.write_string('<cellXfs count="2">')
+	// numFmtId 8 is built-in GBP currency format (e.g., "£17.80")
+	sb.write_string('<cellXfs count="3">')
 	sb.write_string('<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>') // s="0" default
 	sb.write_string('<xf numFmtId="16" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>') // s="1" date
+	sb.write_string('<xf numFmtId="8" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>') // s="2" GBP currency
 	sb.write_string('</cellXfs>')
 
 	// Cell styles

@@ -196,3 +196,33 @@ fn test_document_to_file_roundtrip() ! {
 	cell_b2 := read_sheet.get_cell(Location.from_encoding('B2')!)?
 	assert cell_b2.value == '123', 'B2 should be 123'
 }
+
+fn test_sheet_set_currency_f64_stores_value_with_currency_style() ! {
+	mut doc := Document.new()
+	sheet_id := doc.add_sheet('Test')
+	mut sheet := doc.get_sheet_mut(sheet_id)?
+
+	loc := Location.from_encoding('C4')!
+	sheet.set_currency_f64(loc, 17.80)
+
+	assert sheet.rows.len == 1
+	assert sheet.rows[0].cells.len == 1
+	assert sheet.rows[0].cells[0].value == '17.8'
+	assert sheet.rows[0].cells[0].cell_type == .number_type
+	assert sheet.rows[0].cells[0].style_id == 2, 'currency should have style_id=2'
+}
+
+fn test_sheet_set_formula_with_style_stores_formula_and_style() ! {
+	mut doc := Document.new()
+	sheet_id := doc.add_sheet('Test')
+	mut sheet := doc.get_sheet_mut(sheet_id)?
+
+	loc := Location.from_encoding('E4')!
+	sheet.set_formula_with_style(loc, 'C4*D4', 2)
+
+	assert sheet.rows.len == 1
+	assert sheet.rows[0].cells.len == 1
+	assert sheet.rows[0].cells[0].formula == 'C4*D4'
+	assert sheet.rows[0].cells[0].cell_type == .number_type
+	assert sheet.rows[0].cells[0].style_id == 2, 'formula should have style_id=2'
+}

@@ -84,3 +84,29 @@ fn (sheet Sheet) find_row_index(row_index int) int {
 	}
 	return -1 // Should not happen if ensure_row_exists was called
 }
+
+// Sets a currency cell at the given location (f64 value)
+// style_id=2 applies GBP currency formatting (e.g., "£17.80")
+pub fn (mut sheet Sheet) set_currency_f64(loc Location, value f64) {
+	sheet.ensure_row_exists(loc.row)
+	row_idx := sheet.find_row_index(loc.row)
+	sheet.rows[row_idx].cells << Cell{
+		cell_type: .number_type
+		location:  loc
+		value:     value.str()
+		style_id:  2 // GBP currency format style
+	}
+}
+
+// Sets a formula cell with a specific style at the given location
+pub fn (mut sheet Sheet) set_formula_with_style(loc Location, formula string, style_id int) {
+	sheet.ensure_row_exists(loc.row)
+	row_idx := sheet.find_row_index(loc.row)
+	sheet.rows[row_idx].cells << Cell{
+		cell_type: .number_type
+		location:  loc
+		value:     '' // Value will be computed by Excel
+		formula:   formula
+		style_id:  style_id
+	}
+}
