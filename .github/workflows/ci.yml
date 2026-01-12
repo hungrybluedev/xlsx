@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: "0 0 * * 4"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   code-quality:
     strategy:
@@ -17,15 +21,15 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Setup V
-        uses: vlang/setup-v@v1.4
-        with:
-          check-latest: true
-
       - name: Checkout XLSX module
         uses: actions/checkout@v6
         with:
           path: xlsx
+
+      - name: Setup V
+        uses: vlang/setup-v@v1.4
+        with:
+          check-latest: true
 
       - name: Install module (Unix)
         if: runner.os != 'Windows'
@@ -41,17 +45,23 @@ jobs:
           New-Item -ItemType Directory -Force -Path $vmodulesPath | Out-Null
           cmd /c mklink /D "$vmodulesPath\xlsx" "${{ github.workspace }}\xlsx"
 
+      # Fast checks first (fail-fast)
+      - name: Check formatting
+        working-directory: xlsx
+        run: v fmt -verify .
+
+      - name: Check documentation
+        working-directory: xlsx
+        run: v check-md .
+
+      - name: Check examples compile
+        working-directory: xlsx
+        run: v should-compile-all examples/
+
+      # Slower checks after
       - name: Run tests
-        run: cd xlsx && v test .
-
-      - name: Ensure code is formatted
-        run: cd xlsx && v fmt -verify .
-
-      - name: Ensure documentation is OK
-        run: cd xlsx && v check-md .
-
-      - name: Ensure all examples compile
-        run: cd xlsx && v should-compile-all examples/
+        working-directory: xlsx
+        run: v test .
 
       - name: Run marks example
         working-directory: xlsx
