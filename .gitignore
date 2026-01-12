@@ -29,3 +29,6 @@ bin/
 # Ignore scratch files
 scratch/
 scratch*
+
+CLAUDE.md
+.claude
