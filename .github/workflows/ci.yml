@@ -31,7 +31,7 @@ jobs:
       - name: Build V
         run: |
           cd v && make
-          ./v symlink -githubci && git clone ../xlsx/ ~/.vmodules/xlsx
+          ./v symlink && git clone ../xlsx/ ~/.vmodules/xlsx
 
       - name: Run tests
         run: cd xlsx && v test .
