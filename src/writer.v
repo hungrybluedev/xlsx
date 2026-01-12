@@ -72,12 +72,30 @@ pub fn (doc Document) to_file(path string) ! {
 		os.write_file(os.join_path(temp_dir, 'xl', 'sharedStrings.xml'), generate_shared_strings(shared_strings))!
 	}
 
-	// Write minimal styles.xml (required for proper file structure)
-	os.write_file(os.join_path(temp_dir, 'xl', 'styles.xml'), generate_styles())!
+	// Collect all unique currencies used in the document
+	// and build a map of format_code -> style_id
+	mut currency_style_map := map[string]int{}
+	mut next_style_id := 2 // 0=default, 1=date, 2+=currencies
+	for _, sheet in doc.sheets {
+		for row in sheet.rows {
+			for cell in row.cells {
+				if currency := cell.currency {
+					format_code := currency.format_code()
+					if format_code !in currency_style_map {
+						currency_style_map[format_code] = next_style_id
+						next_style_id++
+					}
+				}
+			}
+		}
+	}
+
+	// Write styles.xml with dynamic currency formats
+	os.write_file(os.join_path(temp_dir, 'xl', 'styles.xml'), generate_styles(currency_style_map))!
 
 	// Write each sheet
 	for sheet_id, sheet in doc.sheets {
-		sheet_xml := generate_sheet_xml(sheet, string_index_map)
+		sheet_xml := generate_sheet_xml(sheet, string_index_map, currency_style_map)
 		os.write_file(os.join_path(temp_dir, 'xl', 'worksheets', 'sheet${sheet_id}.xml'),
 			sheet_xml)!
 	}
@@ -203,11 +221,26 @@ fn generate_shared_strings(strings_list []string) string {
 	return sb.str()
 }
 
-// Generate xl/styles.xml (minimal required structure)
-fn generate_styles() string {
+// Generate xl/styles.xml with dynamic currency formats
+// currency_style_map: maps format_code -> style_id (style_id starts at 2)
+fn generate_styles(currency_style_map map[string]int) string {
 	mut sb := strings.new_builder(1024)
 	sb.write_string('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>')
 	sb.write_string('<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">')
+
+	// Custom number formats section (only if we have currencies)
+	// Custom numFmtIds start at 164
+	if currency_style_map.len > 0 {
+		sb.write_string('<numFmts count="${currency_style_map.len}">')
+		mut num_fmt_id := 164
+		for format_code, _ in currency_style_map {
+			// Escape special XML characters in format code
+			escaped_code := xml_escape(format_code)
+			sb.write_string('<numFmt numFmtId="${num_fmt_id}" formatCode="${escaped_code}"/>')
+			num_fmt_id++
+		}
+		sb.write_string('</numFmts>')
+	}
 
 	// Fonts - at least one required
 	sb.write_string('<fonts count="1">')
@@ -230,13 +263,19 @@ fn generate_styles() string {
 	sb.write_string('<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>')
 	sb.write_string('</cellStyleXfs>')
 
-	// Cell formats - index 0 is default, index 1 is date format, index 2 is GBP currency
-	// numFmtId 16 is built-in "d-mmm" format (e.g., "1-Jan")
-	// numFmtId 8 is built-in GBP currency format (e.g., "£17.80")
-	sb.write_string('<cellXfs count="3">')
+	// Cell formats (cellXfs)
+	// Index 0 = default, Index 1 = date, Index 2+ = currencies
+	cell_xf_count := 2 + currency_style_map.len
+	sb.write_string('<cellXfs count="${cell_xf_count}">')
 	sb.write_string('<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>') // s="0" default
 	sb.write_string('<xf numFmtId="16" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>') // s="1" date
-	sb.write_string('<xf numFmtId="8" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>') // s="2" GBP currency
+
+	// Add currency formats in order of their style_id (which matches iteration order)
+	mut num_fmt_id := 164
+	for _, _ in currency_style_map {
+		sb.write_string('<xf numFmtId="${num_fmt_id}" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>')
+		num_fmt_id++
+	}
 	sb.write_string('</cellXfs>')
 
 	// Cell styles
@@ -249,7 +288,8 @@ fn generate_styles() string {
 }
 
 // Generate xl/worksheets/sheet{N}.xml
-fn generate_sheet_xml(sheet Sheet, string_index_map map[string]int) string {
+// currency_style_map: maps format_code -> style_id for currency cells
+fn generate_sheet_xml(sheet Sheet, string_index_map map[string]int, currency_style_map map[string]int) string {
 	mut sb := strings.new_builder(2048)
 	sb.write_string('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>')
 	sb.write_string('<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">')
@@ -322,7 +362,17 @@ fn generate_sheet_xml(sheet Sheet, string_index_map map[string]int) string {
 
 		for cell in sorted_cells {
 			cell_ref := '${cell.location.col_label}${row_num}'
-			style_attr := if cell.style_id > 0 { ' s="${cell.style_id}"' } else { '' }
+
+			// Determine style_id: currency takes precedence, then style_id field
+			mut effective_style_id := cell.style_id
+			if currency := cell.currency {
+				format_code := currency.format_code()
+				if style_id := currency_style_map[format_code] {
+					effective_style_id = style_id
+				}
+			}
+
+			style_attr := if effective_style_id > 0 { ' s="${effective_style_id}"' } else { '' }
 
 			if cell.formula.len > 0 {
 				// Formula cell - include placeholder value (Excel will recalculate)
@@ -338,7 +388,7 @@ fn generate_sheet_xml(sheet Sheet, string_index_map map[string]int) string {
 				idx := string_index_map[cell.value]
 				sb.write_string('<c r="${cell_ref}"${style_attr} t="s"><v>${idx}</v></c>')
 			} else {
-				// Number cell (with optional style for dates, etc.)
+				// Number cell (with optional style for dates, currencies, etc.)
 				sb.write_string('<c r="${cell_ref}"${style_attr}><v>${cell.value}</v></c>')
 			}
 		}

@@ -1,4 +1,4 @@
-import xlsx { Location }
+import xlsx { Currency, Location }
 import os
 
 // Employee data structure
@@ -58,37 +58,37 @@ fn build_payroll_document() !xlsx.Document {
 		row := i + 4
 		sheet.set_cell(Location.from_cartesian(row - 1, 0)!, emp.last_name) // Last Name (A)
 		sheet.set_cell(Location.from_cartesian(row - 1, 1)!, emp.first_name) // First Name (B)
-		sheet.set_currency_f64(Location.from_cartesian(row - 1, 2)!, emp.hourly_wage) // Hourly Wage (C) with GBP
+		sheet.set_currency(Location.from_cartesian(row - 1, 2)!, emp.hourly_wage, .gbp) // Hourly Wage (C) with GBP
 		sheet.set_number(Location.from_cartesian(row - 1, 3)!, emp.hours_worked) // Hours Worked (D)
-		sheet.set_formula_with_style(Location.from_encoding('E${row}')!, 'C${row}*D${row}',
-			2) // Pay formula (E) with GBP
+		sheet.set_formula_currency(Location.from_encoding('E${row}')!, 'C${row}*D${row}',
+			.gbp) // Pay formula (E) with GBP
 	}
 
 	// Row 24: Empty (skip)
 
 	// Row 25: Max
 	sheet.set_cell(Location.from_encoding('A25')!, 'Max')
-	sheet.set_formula_with_style(Location.from_encoding('C25')!, 'MAX(C4:C23)', 2) // GBP currency
+	sheet.set_formula_currency(Location.from_encoding('C25')!, 'MAX(C4:C23)', .gbp)
 	sheet.set_formula(Location.from_encoding('D25')!, 'MAX(D4:D23)')
-	sheet.set_formula_with_style(Location.from_encoding('E25')!, 'MAX(E4:E23)', 2) // GBP currency
+	sheet.set_formula_currency(Location.from_encoding('E25')!, 'MAX(E4:E23)', .gbp)
 
 	// Row 26: Min
 	sheet.set_cell(Location.from_encoding('A26')!, 'Min')
-	sheet.set_formula_with_style(Location.from_encoding('C26')!, 'MIN(C4:C23)', 2) // GBP currency
+	sheet.set_formula_currency(Location.from_encoding('C26')!, 'MIN(C4:C23)', .gbp)
 	sheet.set_formula(Location.from_encoding('D26')!, 'MIN(D4:D23)')
-	sheet.set_formula_with_style(Location.from_encoding('E26')!, 'MIN(E4:E23)', 2) // GBP currency
+	sheet.set_formula_currency(Location.from_encoding('E26')!, 'MIN(E4:E23)', .gbp)
 
 	// Row 27: Average
 	sheet.set_cell(Location.from_encoding('A27')!, 'Average')
-	sheet.set_formula_with_style(Location.from_encoding('C27')!, 'AVERAGE(C4:C23)', 2) // GBP currency
+	sheet.set_formula_currency(Location.from_encoding('C27')!, 'AVERAGE(C4:C23)', .gbp)
 	sheet.set_formula(Location.from_encoding('D27')!, 'AVERAGE(D4:D23)')
-	sheet.set_formula_with_style(Location.from_encoding('E27')!, 'AVERAGE(E4:E23)', 2) // GBP currency
+	sheet.set_formula_currency(Location.from_encoding('E27')!, 'AVERAGE(E4:E23)', .gbp)
 
 	// Row 28: Total
 	sheet.set_cell(Location.from_encoding('A28')!, 'Total')
-	sheet.set_formula_with_style(Location.from_encoding('C28')!, 'SUM(C4:C23)', 2) // GBP currency
+	sheet.set_formula_currency(Location.from_encoding('C28')!, 'SUM(C4:C23)', .gbp)
 	sheet.set_formula(Location.from_encoding('D28')!, 'SUM(D4:D23)')
-	sheet.set_formula_with_style(Location.from_encoding('E28')!, 'SUM(E4:E23)', 2) // GBP currency
+	sheet.set_formula_currency(Location.from_encoding('E28')!, 'SUM(E4:E23)', .gbp)
 
 	return doc
 }

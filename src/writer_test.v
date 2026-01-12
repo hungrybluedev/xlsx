@@ -197,19 +197,67 @@ fn test_document_to_file_roundtrip() ! {
 	assert cell_b2.value == '123', 'B2 should be 123'
 }
 
-fn test_sheet_set_currency_f64_stores_value_with_currency_style() ! {
+// Currency enum tests
+fn test_currency_format_code() {
+	assert Currency.usd.format_code() == '[$$-409]#,##0.00'
+	assert Currency.gbp.format_code() == '[$£-809]#,##0.00'
+	assert Currency.eur.format_code() == '[$€-407]#,##0.00'
+	assert Currency.jpy.format_code() == '[$¥-411]#,##0' // No decimals for Yen
+	assert Currency.cny.format_code() == '[$¥-804]#,##0.00'
+	assert Currency.inr.format_code() == '[$₹-4009]#,##0.00'
+}
+
+fn test_currency_symbol() {
+	assert Currency.usd.symbol() == '$'
+	assert Currency.gbp.symbol() == '£'
+	assert Currency.eur.symbol() == '€'
+	assert Currency.jpy.symbol() == '¥'
+}
+
+fn test_sheet_set_currency_with_enum() ! {
 	mut doc := Document.new()
 	sheet_id := doc.add_sheet('Test')
 	mut sheet := doc.get_sheet_mut(sheet_id)?
 
 	loc := Location.from_encoding('C4')!
-	sheet.set_currency_f64(loc, 17.80)
+	sheet.set_currency(loc, 17.80, .gbp)
 
 	assert sheet.rows.len == 1
 	assert sheet.rows[0].cells.len == 1
 	assert sheet.rows[0].cells[0].value == '17.8'
 	assert sheet.rows[0].cells[0].cell_type == .number_type
-	assert sheet.rows[0].cells[0].style_id == 2, 'currency should have style_id=2'
+	assert sheet.rows[0].cells[0].currency? == Currency.gbp, 'should have gbp currency set'
+}
+
+fn test_sheet_set_formula_currency() ! {
+	mut doc := Document.new()
+	sheet_id := doc.add_sheet('Test')
+	mut sheet := doc.get_sheet_mut(sheet_id)?
+
+	loc := Location.from_encoding('E4')!
+	sheet.set_formula_currency(loc, 'C4*D4', .usd)
+
+	assert sheet.rows.len == 1
+	assert sheet.rows[0].cells.len == 1
+	assert sheet.rows[0].cells[0].formula == 'C4*D4'
+	assert sheet.rows[0].cells[0].cell_type == .number_type
+	assert sheet.rows[0].cells[0].currency? == Currency.usd, 'formula should have usd currency'
+}
+
+fn test_multiple_currencies_in_document() ! {
+	mut doc := Document.new()
+	sheet_id := doc.add_sheet('Test')
+	mut sheet := doc.get_sheet_mut(sheet_id)?
+
+	sheet.set_currency(Location.from_encoding('A1')!, 100.00, .usd)
+	sheet.set_currency(Location.from_encoding('B1')!, 85.00, .gbp)
+	sheet.set_currency(Location.from_encoding('C1')!, 92.00, .eur)
+
+	assert sheet.rows.len == 1
+	assert sheet.rows[0].cells.len == 3
+	assert sheet.rows[0].cells[0].currency? == Currency.usd
+	assert sheet.rows[0].cells[1].currency? == Currency.gbp
+	assert sheet.rows[0].cells[2].currency? == Currency.eur
 }
 
 fn test_sheet_set_formula_with_style_stores_formula_and_style() ! {

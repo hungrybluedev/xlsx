@@ -41,6 +41,41 @@ pub enum CellType {
 	number_type
 }
 
+// Currency represents supported currency formats for cell formatting
+pub enum Currency {
+	usd // US Dollar ($)
+	gbp // British Pound (£)
+	eur // Euro (€)
+	jpy // Japanese Yen (¥)
+	cny // Chinese Yuan (¥)
+	inr // Indian Rupee (₹)
+}
+
+// Returns the Excel format code for this currency
+// Format codes use locale IDs for portability across systems
+pub fn (c Currency) format_code() string {
+	return match c {
+		.usd { '[$$-409]#,##0.00' }
+		.gbp { '[$£-809]#,##0.00' }
+		.eur { '[$€-407]#,##0.00' }
+		.jpy { '[$¥-411]#,##0' } // No decimals for Yen
+		.cny { '[$¥-804]#,##0.00' }
+		.inr { '[$₹-4009]#,##0.00' }
+	}
+}
+
+// Returns the currency symbol
+pub fn (c Currency) symbol() string {
+	return match c {
+		.usd { '$' }
+		.gbp { '£' }
+		.eur { '€' }
+		.jpy { '¥' }
+		.cny { '¥' }
+		.inr { '₹' }
+	}
+}
+
 pub fn CellType.from_code(code string) !CellType {
 	match code {
 		's' {
@@ -60,8 +95,9 @@ pub:
 	cell_type CellType
 	location  Location
 	value     string
-	formula   string // Optional: formula expression (e.g., "C4*D4")
-	style_id  int    // Style index for formatting (0=default, 1=date, 2=currency, etc.)
+	formula   string    // Optional: formula expression (e.g., "C4*D4")
+	style_id  int       // Style index for formatting (0=default, 1=date)
+	currency  ?Currency // Optional: currency for currency-formatted cells
 }
 
 pub struct DataFrame {
