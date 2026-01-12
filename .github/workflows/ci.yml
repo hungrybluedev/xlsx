@@ -54,6 +54,14 @@ jobs:
         working-directory: xlsx
         run: v check-md .
 
+      - name: Check README examples in sync
+        working-directory: xlsx
+        run: v run tools/check_readme_sync.v
+
+      - name: Compile README snippets
+        working-directory: xlsx
+        run: v should-compile-all examples/snippets/
+
       - name: Check examples compile
         working-directory: xlsx
         run: v should-compile-all examples/
