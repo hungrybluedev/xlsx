@@ -13,25 +13,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14, macos-latest]
+        os: [ubuntu-latest, macos-14, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout Latest V
-        uses: actions/checkout@v6
+      - name: Setup V
+        uses: vlang/setup-v@v1.4
         with:
-          repository: vlang/v
-          path: v
+          check-latest: true
 
-      - name: Checkout the XLSX module
+      - name: Checkout XLSX module
         uses: actions/checkout@v6
         with:
           path: xlsx
 
-      - name: Build V
+      - name: Install module (Unix)
+        if: runner.os != 'Windows'
         run: |
-          cd v && make
-          ./v symlink && git clone ../xlsx/ ~/.vmodules/xlsx
+          mkdir -p ~/.vmodules
+          ln -s ${{ github.workspace }}/xlsx ~/.vmodules/xlsx
+
+      - name: Install module (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vmodulesPath = "$env:USERPROFILE\.vmodules"
+          New-Item -ItemType Directory -Force -Path $vmodulesPath | Out-Null
+          cmd /c mklink /D "$vmodulesPath\xlsx" "${{ github.workspace }}\xlsx"
 
       - name: Run tests
         run: cd xlsx && v test .
@@ -45,5 +53,6 @@ jobs:
       - name: Ensure all examples compile
         run: cd xlsx && v should-compile-all examples/
 
-      - name: Ensure marks example, can run from an arbitrary working folder
-        run: xlsx/examples/01_marksheet/marks
+      - name: Run marks example
+        working-directory: xlsx
+        run: v run examples/01_marksheet/marks.v
