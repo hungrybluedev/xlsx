@@ -315,15 +315,15 @@ pub fn AppProperties.parse(content string) !AppProperties {
 	}
 
 	return AppProperties{
-		application: application
-		doc_security: doc_security
-		scale_crop: scale_crop
-		links_up_to_date: links_up_to_date
-		shared_doc: shared_doc
+		application:        application
+		doc_security:       doc_security
+		scale_crop:         scale_crop
+		links_up_to_date:   links_up_to_date
+		shared_doc:         shared_doc
 		hyperlinks_changed: hyperlinks_changed
-		app_version: app_version
-		company: company
-		heading_pairs: heading_pairs
-		titles_of_parts: titles_of_parts
+		app_version:        app_version
+		company:            company
+		heading_pairs:      heading_pairs
+		titles_of_parts:    titles_of_parts
 	}
 }

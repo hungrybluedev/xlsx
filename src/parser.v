@@ -111,7 +111,7 @@ pub fn Document.from_file(path string) !Document {
 
 	return Document{
 		shared_strings: shared_strings
-		sheets: sheet_map
+		sheets:         sheet_map
 	}
 }
 
@@ -174,9 +174,9 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sh
 					}
 
 					cells << Cell{
-						value: value
+						value:     value
 						cell_type: cell_type
-						location: Location.from_encoding(location_string)!
+						location:  Location.from_encoding(location_string)!
 					}
 				}
 				else {
@@ -188,13 +188,13 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string) !Sh
 		rows << Row{
 			row_index: row_index
 			row_label: row_label
-			cells: cells
+			cells:     cells
 		}
 	}
 	return Sheet{
-		name: name
-		rows: rows
-		top_left: top_left
+		name:         name
+		rows:         rows
+		top_left:     top_left
 		bottom_right: bottom_right
 	}
 }

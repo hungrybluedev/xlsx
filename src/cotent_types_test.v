@@ -7,39 +7,39 @@ fn test_empty() ! {
 	empty_xml := '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>'
 	content_types := xlsx.ContentTypes.parse(empty_xml)!
 	expected_types := xlsx.ContentTypes{
-		defaults: [
+		defaults:  [
 			xlsx.DefaultContentType{
-				extension: 'rels'
+				extension:    'rels'
 				content_type: 'application/vnd.openxmlformats-package.relationships+xml'
 			},
 			xlsx.DefaultContentType{
-				extension: 'xml'
+				extension:    'xml'
 				content_type: 'application/xml'
 			},
 		]
 		overrides: [
 			xlsx.OverrideContentType{
-				part_name: '/xl/workbook.xml'
+				part_name:    '/xl/workbook.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/xl/worksheets/sheet1.xml'
+				part_name:    '/xl/worksheets/sheet1.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/xl/theme/theme1.xml'
+				part_name:    '/xl/theme/theme1.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.theme+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/xl/styles.xml'
+				part_name:    '/xl/styles.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/docProps/core.xml'
+				part_name:    '/docProps/core.xml'
 				content_type: 'application/vnd.openxmlformats-package.core-properties+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/docProps/app.xml'
+				part_name:    '/docProps/app.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.extended-properties+xml'
 			},
 		]
@@ -54,47 +54,47 @@ fn test_sample_data() {
 
 	content_types := xlsx.ContentTypes.parse(data_contents)!
 	expected_types := xlsx.ContentTypes{
-		defaults: [
+		defaults:  [
 			xlsx.DefaultContentType{
-				extension: 'rels'
+				extension:    'rels'
 				content_type: 'application/vnd.openxmlformats-package.relationships+xml'
 			},
 			xlsx.DefaultContentType{
-				extension: 'xml'
+				extension:    'xml'
 				content_type: 'application/xml'
 			},
 		]
 		overrides: [
 			xlsx.OverrideContentType{
-				part_name: '/xl/workbook.xml'
+				part_name:    '/xl/workbook.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/xl/worksheets/sheet1.xml'
+				part_name:    '/xl/worksheets/sheet1.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/xl/worksheets/sheet2.xml'
+				part_name:    '/xl/worksheets/sheet2.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/xl/theme/theme1.xml'
+				part_name:    '/xl/theme/theme1.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.theme+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/xl/styles.xml'
+				part_name:    '/xl/styles.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/xl/sharedStrings.xml'
+				part_name:    '/xl/sharedStrings.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/docProps/core.xml'
+				part_name:    '/docProps/core.xml'
 				content_type: 'application/vnd.openxmlformats-package.core-properties+xml'
 			},
 			xlsx.OverrideContentType{
-				part_name: '/docProps/app.xml'
+				part_name:    '/docProps/app.xml'
 				content_type: 'application/vnd.openxmlformats-officedocument.extended-properties+xml'
 			},
 		]
@@ -106,17 +106,21 @@ fn test_sample_data() {
 
 const core_properties_dataset = [
 	xlsx.CoreProperties{
-		created_by: 'Subhomoy Haldar'
+		created_by:  'Subhomoy Haldar'
 		modified_by: 'Subhomoy Haldar'
-		created_at: time.parse_iso8601('2024-02-10T10:24:19Z') or { panic('Failed to parse time.') }
+		created_at:  time.parse_iso8601('2024-02-10T10:24:19Z') or {
+			panic('Failed to parse time.')
+		}
 		modified_at: time.parse_iso8601('2024-02-10T10:24:36Z') or {
 			panic('Failed to parse time.')
 		}
 	},
 	xlsx.CoreProperties{
-		created_by: 'Person A'
+		created_by:  'Person A'
 		modified_by: 'Person B'
-		created_at: time.parse_iso8601('2024-02-10T10:24:19Z') or { panic('Failed to parse time.') }
+		created_at:  time.parse_iso8601('2024-02-10T10:24:19Z') or {
+			panic('Failed to parse time.')
+		}
 		modified_at: time.parse_iso8601('2024-02-15T12:08:10Z') or {
 			panic('Failed to parse time.')
 		}
@@ -141,24 +145,24 @@ fn test_app_properties() {
 
 	app_properties := xlsx.AppProperties.parse(app_content)!
 	expected_properties := xlsx.AppProperties{
-		application: 'Microsoft Excel'
-		doc_security: '0'
-		scale_crop: false
-		heading_pairs: [
+		application:        'Microsoft Excel'
+		doc_security:       '0'
+		scale_crop:         false
+		heading_pairs:      [
 			xlsx.HeadingPair{
-				name: 'Worksheets'
+				name:  'Worksheets'
 				count: 2
 			},
 		]
-		titles_of_parts: [
+		titles_of_parts:    [
 			xlsx.TitlesOfParts{'Sample Weather Info'},
 			xlsx.TitlesOfParts{'Sample Altitude Info'},
 		]
-		company: ''
-		links_up_to_date: false
-		shared_doc: false
+		company:            ''
+		links_up_to_date:   false
+		shared_doc:         false
 		hyperlinks_changed: false
-		app_version: '16.0300'
+		app_version:        '16.0300'
 	}
 
 	assert app_properties == expected_properties
