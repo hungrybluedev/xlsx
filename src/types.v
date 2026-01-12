@@ -146,6 +146,29 @@ pub:
 	raw_data [][]string
 }
 
+// StyleInfo holds parsed style information from xl/styles.xml
+pub struct StyleInfo {
+pub mut:
+	num_fmt_codes map[int]string // numFmtId -> formatCode
+	cell_xfs      []CellXf       // index = styleId
+	fills         []FillInfo
+}
+
+// CellXf represents a cell format entry from cellXfs section
+pub struct CellXf {
+pub:
+	num_fmt_id int
+	fill_id    int
+}
+
+// FillInfo represents fill information from fills section
+pub struct FillInfo {
+pub mut:
+	pattern_type string
+	theme        ?int
+	tint         ?f64
+}
+
 pub fn (data DataFrame) row_count() int {
 	return data.raw_data.len
 }

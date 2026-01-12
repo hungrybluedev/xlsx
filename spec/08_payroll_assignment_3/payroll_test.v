@@ -1,6 +1,30 @@
 import xlsx { Location, ThemeFill }
 import os
 import time
+import math
+
+// Helper function to compare cell values, handling floating point precision
+fn values_match(ref_val string, out_val string) bool {
+	// Direct string match
+	if ref_val == out_val {
+		return true
+	}
+	// Try parsing as floats and compare with tolerance
+	ref_f := ref_val.f64()
+	out_f := out_val.f64()
+	// If both parse as valid numbers (not 0 when non-zero string), compare with tolerance
+	if ref_f != 0.0 || ref_val == '0' || ref_val == '0.0' {
+		if out_f != 0.0 || out_val == '0' || out_val == '0.0' {
+			return math.abs(ref_f - out_f) < 1e-9
+		}
+	}
+	return false
+}
+
+// Helper function to compare floating point values with tolerance
+fn f64_approx_equal(a f64, b f64, tolerance f64) bool {
+	return math.abs(a - b) < tolerance
+}
 
 // Employee data structure with 5 weeks of hours
 struct EmployeeWeekly {
@@ -412,4 +436,128 @@ fn test_roundtrip_payroll() ! {
 
 	// Row 28: Summary (Total)
 	assert written_data.raw_data[27][0] == 'Total', 'A28 should be Total'
+}
+
+fn test_compare_reference_vs_generated() ! {
+	// Read reference file (source of truth)
+	ref_path := os.join_path(os.dir(@FILE), 'payroll.xlsx')
+	ref_doc := xlsx.Document.from_file(ref_path)!
+	ref_sheet := ref_doc.sheets[1]
+
+	// Build and write output file
+	doc := build_payroll_document()!
+	output_path := os.join_path(os.dir(@FILE), 'payroll_output.xlsx')
+	doc.to_file(output_path)!
+
+	// Read generated file
+	out_doc := xlsx.Document.from_file(output_path)!
+	out_sheet := out_doc.sheets[1]
+
+	// Compare dimensions
+	assert ref_sheet.top_left.row == out_sheet.top_left.row, 'top_left row mismatch'
+	assert ref_sheet.top_left.col == out_sheet.top_left.col, 'top_left col mismatch'
+	assert ref_sheet.bottom_right.row == out_sheet.bottom_right.row, 'bottom_right row mismatch'
+	assert ref_sheet.bottom_right.col == out_sheet.bottom_right.col, 'bottom_right col mismatch'
+
+	// Compare all cell values (excluding formula cells which have placeholder values in generated files)
+	ref_data := ref_sheet.get_all_data()!
+	out_data := out_sheet.get_all_data()!
+
+	assert ref_data.raw_data.len == out_data.raw_data.len, 'row count mismatch: ref=${ref_data.raw_data.len}, out=${out_data.raw_data.len}'
+
+	for row_idx, ref_row in ref_data.raw_data {
+		assert ref_row.len == out_data.raw_data[row_idx].len, 'col count mismatch at row ${row_idx}'
+		for col_idx, ref_val in ref_row {
+			out_val := out_data.raw_data[row_idx][col_idx]
+			// Check if this is a formula cell
+			// Data rows 4-23 (indices 3-22): cols I-AD (indices 8-29) have formulas
+			// Summary rows 25-28 (indices 24-27): cols C onwards have formulas
+			is_data_row := row_idx >= 3 && row_idx <= 22
+			is_summary_row := row_idx >= 24 && row_idx <= 27
+			is_formula_cell := (is_data_row && col_idx >= 8) || (is_summary_row && col_idx >= 2)
+			if is_formula_cell {
+				// For formula cells, the generated file has placeholder 0, so skip value comparison
+				continue
+			}
+			// Compare values - handle floating point precision differences
+			if !values_match(ref_val, out_val) {
+				assert false, 'value mismatch at row ${row_idx + 1}, col ${col_idx}: expected "${ref_val}", got "${out_val}"'
+			}
+		}
+	}
+
+	// Compare formulas for key cells
+	// D4 should have hours value (not a formula)
+	d4_ref := ref_sheet.get_cell(Location.from_encoding('D4')!) or {
+		assert false, 'D4 not found in reference'
+		return
+	}
+	d4_out := out_sheet.get_cell(Location.from_encoding('D4')!) or {
+		assert false, 'D4 not found in output'
+		return
+	}
+	assert d4_ref.value == d4_out.value, 'D4 value mismatch: ref="${d4_ref.value}", out="${d4_out.value}"'
+
+	// I4 should have IF formula for overtime hours
+	i4_ref := ref_sheet.get_cell(Location.from_encoding('I4')!) or {
+		assert false, 'I4 not found in reference'
+		return
+	}
+	i4_out := out_sheet.get_cell(Location.from_encoding('I4')!) or {
+		assert false, 'I4 not found in output'
+		return
+	}
+	assert i4_ref.formula.contains('IF'), 'I4 ref should have IF formula, got: ${i4_ref.formula}'
+	assert i4_out.formula.contains('IF'), 'I4 out should have IF formula, got: ${i4_out.formula}'
+
+	// Compare currency formatting
+	// C4 should have GBP currency
+	c4_ref := ref_sheet.get_cell(Location.from_encoding('C4')!) or {
+		assert false, 'C4 not found in reference'
+		return
+	}
+	c4_out := out_sheet.get_cell(Location.from_encoding('C4')!) or {
+		assert false, 'C4 not found in output'
+		return
+	}
+	assert c4_ref.currency == c4_out.currency, 'C4 currency mismatch: ref=${c4_ref.currency}, out=${c4_out.currency}'
+
+	// Compare theme fills
+	// D4 should have fill_hours_worked (theme 3)
+	assert d4_ref.fill != none, 'D4 ref should have fill'
+	assert d4_out.fill != none, 'D4 out should have fill'
+	if ref_fill := d4_ref.fill {
+		if out_fill := d4_out.fill {
+			assert ref_fill.theme == out_fill.theme, 'D4 fill theme mismatch: ref=${ref_fill.theme}, out=${out_fill.theme}'
+			assert f64_approx_equal(ref_fill.tint, out_fill.tint, 1e-10), 'D4 fill tint mismatch: ref=${ref_fill.tint}, out=${out_fill.tint}'
+		}
+	}
+
+	// I4 should have fill_overtime_hours (theme 5)
+	assert i4_ref.fill != none, 'I4 ref should have fill'
+	assert i4_out.fill != none, 'I4 out should have fill'
+	if ref_fill := i4_ref.fill {
+		if out_fill := i4_out.fill {
+			assert ref_fill.theme == out_fill.theme, 'I4 fill theme mismatch: ref=${ref_fill.theme}, out=${out_fill.theme}'
+			assert f64_approx_equal(ref_fill.tint, out_fill.tint, 1e-10), 'I4 fill tint mismatch: ref=${ref_fill.tint}, out=${out_fill.tint}'
+		}
+	}
+
+	// N4 should have fill_pay (theme 9, lighter green)
+	n4_ref := ref_sheet.get_cell(Location.from_encoding('N4')!) or {
+		assert false, 'N4 not found in reference'
+		return
+	}
+	n4_out := out_sheet.get_cell(Location.from_encoding('N4')!) or {
+		assert false, 'N4 not found in output'
+		return
+	}
+	assert n4_ref.fill != none, 'N4 ref should have fill'
+	assert n4_out.fill != none, 'N4 out should have fill'
+	if ref_fill := n4_ref.fill {
+		if out_fill := n4_out.fill {
+			assert ref_fill.theme == out_fill.theme, 'N4 fill theme mismatch: ref=${ref_fill.theme}, out=${out_fill.theme}'
+			assert f64_approx_equal(ref_fill.tint, out_fill.tint, 1e-10), 'N4 fill tint mismatch: ref=${ref_fill.tint}, out=${out_fill.tint}'
+		}
+	}
 }

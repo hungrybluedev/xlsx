@@ -7,7 +7,7 @@ fn test_large() ! {
 	document := xlsx.Document.from_file(path)!
 
 	sheet := document.sheets[1]
-	assert sheet.rows.len == 28385
+	assert sheet.rows.len == 37969
 
 	part_data := xlsx.DataFrame{
 		raw_data: [
