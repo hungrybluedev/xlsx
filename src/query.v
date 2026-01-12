@@ -31,11 +31,11 @@ pub fn (sheet Sheet) get_data(top_left Location, bottom_right Location) !DataFra
 	if bottom_right.col > sheet.rows[bottom_right.row].cells.len {
 		return error('bottom_right.col out of range')
 	}
-	mut row_values := [][]string{cap: top_left.row - bottom_right.row + 1}
+	mut row_values := [][]string{cap: bottom_right.row - top_left.row + 1}
 
 	for index in top_left.row .. bottom_right.row + 1 {
 		row := sheet.rows[index]
-		mut cell_values := []string{cap: top_left.col - bottom_right.col + 1}
+		mut cell_values := []string{cap: bottom_right.col - top_left.col + 1}
 		for column in top_left.col .. bottom_right.col + 1 {
 			cell_values << row.cells[column].value
 		}

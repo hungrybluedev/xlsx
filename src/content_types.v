@@ -161,6 +161,7 @@ pub fn CoreProperties.parse(content string) !CoreProperties {
 }
 
 pub struct HeadingPair {
+pub:
 	name  string
 	count int
 }
@@ -211,6 +212,7 @@ fn encode_heading_pairs(pairs []HeadingPair) string {
 }
 
 pub struct TitlesOfParts {
+pub:
 	entity string
 }
 
@@ -242,6 +244,7 @@ fn TitlesOfParts.parse(node xml.XMLNode) ![]TitlesOfParts {
 }
 
 pub struct AppProperties {
+pub:
 	application        string
 	doc_security       string
 	scale_crop         bool
