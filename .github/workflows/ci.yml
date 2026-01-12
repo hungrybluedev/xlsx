@@ -18,13 +18,13 @@ jobs:
 
     steps:
       - name: Checkout Latest V
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: vlang/v
           path: v
 
       - name: Checkout the XLSX module
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: xlsx
 
