@@ -45,6 +45,20 @@ pub fn (mut sheet Sheet) set_formula(loc Location, formula string) {
 	}
 }
 
+// Sets a date cell at the given location (Excel serial date number)
+// Excel dates are stored as numbers: days since 1900-01-01 (with 1900 bug)
+// style_id=1 applies date formatting (e.g., "01-Jan")
+pub fn (mut sheet Sheet) set_date(loc Location, excel_date int) {
+	sheet.ensure_row_exists(loc.row)
+	row_idx := sheet.find_row_index(loc.row)
+	sheet.rows[row_idx].cells << Cell{
+		cell_type: .number_type
+		location:  loc
+		value:     excel_date.str()
+		style_id:  1 // Date format style
+	}
+}
+
 // Ensures a row exists at the given index, creating it if necessary
 fn (mut sheet Sheet) ensure_row_exists(row_index int) {
 	// Check if row already exists

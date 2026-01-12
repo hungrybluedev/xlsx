@@ -61,6 +61,7 @@ pub:
 	location  Location
 	value     string
 	formula   string // Optional: formula expression (e.g., "C4*D4")
+	style_id  int    // Style index for formatting (0=default, 1=date, 2=currency, etc.)
 }
 
 pub struct DataFrame {

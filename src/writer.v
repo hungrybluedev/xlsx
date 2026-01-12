@@ -230,9 +230,11 @@ fn generate_styles() string {
 	sb.write_string('<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>')
 	sb.write_string('</cellStyleXfs>')
 
-	// Cell formats
-	sb.write_string('<cellXfs count="1">')
-	sb.write_string('<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>')
+	// Cell formats - index 0 is default, index 1 is date format
+	// numFmtId 16 is built-in "d-mmm" format (e.g., "1-Jan")
+	sb.write_string('<cellXfs count="2">')
+	sb.write_string('<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>') // s="0" default
+	sb.write_string('<xf numFmtId="16" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>') // s="1" date
 	sb.write_string('</cellXfs>')
 
 	// Cell styles
@@ -318,10 +320,11 @@ fn generate_sheet_xml(sheet Sheet, string_index_map map[string]int) string {
 
 		for cell in sorted_cells {
 			cell_ref := '${cell.location.col_label}${row_num}'
+			style_attr := if cell.style_id > 0 { ' s="${cell.style_id}"' } else { '' }
 
 			if cell.formula.len > 0 {
 				// Formula cell - include placeholder value (Excel will recalculate)
-				sb.write_string('<c r="${cell_ref}"><f>${xml_escape(cell.formula)}</f>')
+				sb.write_string('<c r="${cell_ref}"${style_attr}><f>${xml_escape(cell.formula)}</f>')
 				if cell.value.len > 0 {
 					sb.write_string('<v>${cell.value}</v>')
 				} else {
@@ -331,10 +334,10 @@ fn generate_sheet_xml(sheet Sheet, string_index_map map[string]int) string {
 			} else if cell.cell_type == .string_type {
 				// String cell - reference shared strings
 				idx := string_index_map[cell.value]
-				sb.write_string('<c r="${cell_ref}" t="s"><v>${idx}</v></c>')
+				sb.write_string('<c r="${cell_ref}"${style_attr} t="s"><v>${idx}</v></c>')
 			} else {
-				// Number cell
-				sb.write_string('<c r="${cell_ref}"><v>${cell.value}</v></c>')
+				// Number cell (with optional style for dates, etc.)
+				sb.write_string('<c r="${cell_ref}"${style_attr}><v>${cell.value}</v></c>')
 			}
 		}
 
