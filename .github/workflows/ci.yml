@@ -66,3 +66,29 @@ jobs:
       - name: Run marks example
         working-directory: xlsx
         run: v run examples/01_marksheet/marks.v
+
+  test-examples:
+    needs: code-quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup V
+        uses: vlang/setup-v@v1.4
+        with:
+          check-latest: true
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install xlsx package from current commit
+        run: |
+          mkdir -p ~/.vmodules
+          ln -s ${{ github.workspace }} ~/.vmodules/xlsx
+
+      - name: Verify examples compile
+        run: v should-compile-all examples/
+
+      - name: Run reading example
+        run: v run examples/01_marksheet/marks.v
+
+      - name: Run example tests
+        run: v test examples/
