@@ -110,38 +110,50 @@ fn test_write_payroll() ! {
 	// Note: Output file is kept at payroll_output.xlsx for manual verification
 }
 
-// TODO: This test is disabled because the reader has issues with sparse rows
-// fn test_roundtrip_payroll() ! {
-// 	// Read the original spec file
-// 	spec_path := os.join_path(os.dir(@FILE), 'payroll.xlsx')
-// 	original := xlsx.Document.from_file(spec_path)!
-// 	original_data := original.sheets[1].get_all_data()!
-//
-// 	// Build equivalent document programmatically
-// 	doc := build_payroll_document()!
-//
-// 	// Write to temp file
-// 	temp_path := os.join_path(os.temp_dir(), 'test_payroll_roundtrip.xlsx')
-// 	defer {
-// 		os.rm(temp_path) or {}
-// 	}
-// 	doc.to_file(temp_path)!
-//
-// 	// Read back
-// 	written_doc := xlsx.Document.from_file(temp_path)!
-// 	written_data := written_doc.sheets[1].get_all_data()!
-//
-// 	// Compare dimensions
-// 	assert written_data.raw_data.len == original_data.raw_data.len
-//
-// 	// Compare each row
-// 	for i, original_row in original_data.raw_data {
-// 		written_row := written_data.raw_data[i]
-// 		assert written_row.len == original_row.len
-//
-// 		for j, original_cell in original_row {
-// 			written_cell := written_row[j]
-// 			assert written_cell == original_cell
-// 		}
-// 	}
-// }
+fn test_roundtrip_payroll() ! {
+	// Build document programmatically
+	doc := build_payroll_document()!
+
+	// Write to temp file
+	temp_path := os.join_path(os.temp_dir(), 'test_payroll_roundtrip.xlsx')
+	defer {
+		os.rm(temp_path) or {}
+	}
+	doc.to_file(temp_path)!
+
+	// Read back
+	written_doc := xlsx.Document.from_file(temp_path)!
+	written_sheet := written_doc.sheets[1]
+	written_data := written_sheet.get_all_data()!
+
+	// Verify dimensions (28 rows, 5 columns: A-E)
+	assert written_data.raw_data.len == 28, 'should have 28 rows'
+	assert written_data.raw_data[0].len == 5, 'should have 5 columns'
+
+	// Verify specific cells
+	// Row 1: Headers
+	assert written_data.raw_data[0][0] == 'Employee Payroll', 'A1 should be Employee Payroll'
+	assert written_data.raw_data[0][2] == 'Subhomoy Haldar', 'C1 should be author name'
+
+	// Row 3: Column headers
+	assert written_data.raw_data[2][0] == 'Last Name', 'A3 should be Last Name'
+	assert written_data.raw_data[2][1] == 'First Name', 'B3 should be First Name'
+	assert written_data.raw_data[2][2] == 'Hourly Wage', 'C3 should be Hourly Wage'
+
+	// Row 4: First employee data
+	assert written_data.raw_data[3][0] == 'Rowntree', 'A4 should be Rowntree'
+	assert written_data.raw_data[3][1] == 'Geoffrey', 'B4 should be Geoffrey'
+	assert written_data.raw_data[3][2] == '17.8', 'C4 should be 17.8'
+	assert written_data.raw_data[3][3] == '39', 'D4 should be 39'
+	// E4 is a formula - value will be 0 (placeholder) until Excel recalculates
+
+	// Row 24: Empty (sparse row)
+	assert written_data.raw_data[23][0] == '', 'A24 should be empty'
+	assert written_data.raw_data[23][4] == '', 'E24 should be empty'
+
+	// Row 25: Summary (Max)
+	assert written_data.raw_data[24][0] == 'Max', 'A25 should be Max'
+
+	// Row 28: Summary (Total)
+	assert written_data.raw_data[27][0] == 'Total', 'A28 should be Total'
+}
