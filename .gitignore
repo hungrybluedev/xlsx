@@ -43,3 +43,4 @@ CLAUDE.md
 
 # Ignore compiled example binaries
 examples/snippets/*_example
+examples/01_marksheet/marks
