@@ -303,7 +303,8 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string, sty
 					if formula_tags.len > 0 {
 						f_tag := formula_tags[0]
 						// Check if this is a shared formula definition or reference
-						is_shared := f_tag.attributes['t'] or { '' } == 'shared'
+						f_type := f_tag.attributes['t'] or { '' }
+						is_shared := f_type == 'shared'
 						si_str := f_tag.attributes['si'] or { '' }
 						si := if si_str != '' { si_str.int() } else { -1 }
 
