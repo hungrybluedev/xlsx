@@ -32,6 +32,7 @@ fn test_large() ! {
 			['159', 'Jeromyw', 'Female', '32', '16/08/2019', 'France'],
 		]
 	}
-	extracted_data := sheet.get_data(Location.from_encoding('A142')!, Location.from_encoding('F160')!)!
+	extracted_data := sheet.get_data(Location.from_encoding('A142')!,
+		Location.from_encoding('F160')!)!
 	assert part_data == extracted_data
 }

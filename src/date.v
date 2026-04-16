@@ -13,7 +13,7 @@ const excel_fake_leap_day = 60
 
 // Converts a time.Time to an Excel serial date number.
 // Handles Excel's 1900 leap year bug correctly.
-pub fn time_to_excel_date(t time.Time) int {
+pub fn time_to_excel_date(t Time) int {
 	days_since_unix := time.days_from_unix_epoch(t.year, t.month, t.day)
 	excel_date := days_since_unix + unix_epoch_as_excel_serial
 
@@ -28,7 +28,7 @@ pub fn time_to_excel_date(t time.Time) int {
 // Converts an Excel serial date number to a time.Time.
 // Handles Excel's 1900 leap year bug correctly.
 // Note: Serial 60 (Excel's fake Feb 29, 1900) maps to March 1, 1900.
-pub fn excel_date_to_time(excel_date int) time.Time {
+pub fn excel_date_to_time(excel_date int) Time {
 	mut days_since_unix := 0
 
 	// Account for Excel's fake Feb 29, 1900

@@ -108,7 +108,8 @@ pub fn (doc Document) to_file(path string) ! {
 
 	// Write shared strings if any exist
 	if shared_strings.len > 0 {
-		os.write_file(os.join_path(temp_dir, 'xl', 'sharedStrings.xml'), generate_shared_strings(shared_strings))!
+		os.write_file(os.join_path(temp_dir, 'xl', 'sharedStrings.xml'),
+			generate_shared_strings(shared_strings))!
 	}
 
 	// Write theme (required for consistent theme colors)
@@ -198,15 +199,14 @@ pub fn (doc Document) to_file(path string) ! {
 	}
 
 	// Write styles.xml with dynamic fills and Aptos font
-	os.write_file(os.join_path(temp_dir, 'xl', 'styles.xml'), generate_styles_v2(num_fmts,
-		fills, styles))!
+	os.write_file(os.join_path(temp_dir, 'xl', 'styles.xml'), generate_styles_v2(num_fmts, fills,
+		styles))!
 
 	// Write each sheet
 	for sheet_id, sheet in doc.sheets {
 		sheet_xml := generate_sheet_xml_v2(sheet, string_index_map, num_fmt_map, fill_map,
 			style_map)
-		os.write_file(os.join_path(temp_dir, 'xl', 'worksheets', 'sheet${sheet_id}.xml'),
-			sheet_xml)!
+		os.write_file(os.join_path(temp_dir, 'xl', 'worksheets', 'sheet${sheet_id}.xml'), sheet_xml)!
 	}
 
 	// Create ZIP file
@@ -337,8 +337,8 @@ fn generate_shared_strings(strings_list []string) string {
 
 // Escape XML special characters
 fn xml_escape(s string) string {
-	return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"',
-		'&quot;').replace("'", '&apos;')
+	return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'",
+		'&apos;')
 }
 
 // Generate xl/theme/theme1.xml - Office theme with Aptos fonts

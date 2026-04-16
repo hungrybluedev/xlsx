@@ -244,7 +244,8 @@ fn build_payroll_document() !xlsx.Document {
 	sheet.build_cell(Location.from_encoding('C25')!, formula: 'MAX(C4:C23)', currency: .gbp)
 	for week in 0 .. 5 {
 		hours_col := hours_cols[week]
-		sheet.set_formula(Location.from_encoding('${hours_col}25')!, 'MAX(${hours_col}4:${hours_col}23)')
+		sheet.set_formula(Location.from_encoding('${hours_col}25')!,
+			'MAX(${hours_col}4:${hours_col}23)')
 	}
 	for week in 0 .. 5 {
 		pay_col := pay_cols[week]
@@ -275,7 +276,8 @@ fn build_payroll_document() !xlsx.Document {
 	sheet.build_cell(Location.from_encoding('C26')!, formula: 'MIN(C4:C23)', currency: .gbp)
 	for week in 0 .. 5 {
 		hours_col := hours_cols[week]
-		sheet.set_formula(Location.from_encoding('${hours_col}26')!, 'MIN(${hours_col}4:${hours_col}23)')
+		sheet.set_formula(Location.from_encoding('${hours_col}26')!,
+			'MIN(${hours_col}4:${hours_col}23)')
 	}
 	for week in 0 .. 5 {
 		pay_col := pay_cols[week]
@@ -306,7 +308,8 @@ fn build_payroll_document() !xlsx.Document {
 	sheet.build_cell(Location.from_encoding('C27')!, formula: 'AVERAGE(C4:C23)', currency: .gbp)
 	for week in 0 .. 5 {
 		hours_col := hours_cols[week]
-		sheet.set_formula(Location.from_encoding('${hours_col}27')!, 'AVERAGE(${hours_col}4:${hours_col}23)')
+		sheet.set_formula(Location.from_encoding('${hours_col}27')!,
+			'AVERAGE(${hours_col}4:${hours_col}23)')
 	}
 	for week in 0 .. 5 {
 		pay_col := pay_cols[week]
@@ -337,7 +340,8 @@ fn build_payroll_document() !xlsx.Document {
 	sheet.build_cell(Location.from_encoding('C28')!, formula: 'SUM(C4:C23)', currency: .gbp)
 	for week in 0 .. 5 {
 		hours_col := hours_cols[week]
-		sheet.set_formula(Location.from_encoding('${hours_col}28')!, 'SUM(${hours_col}4:${hours_col}23)')
+		sheet.set_formula(Location.from_encoding('${hours_col}28')!,
+			'SUM(${hours_col}4:${hours_col}23)')
 	}
 	for week in 0 .. 5 {
 		pay_col := pay_cols[week]

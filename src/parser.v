@@ -274,7 +274,8 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string, sty
 			match child {
 				xml.XMLNode {
 					// Extract value from <v> element
-					matching_tags := child.children.filter(it is xml.XMLNode && it.name == 'v').map(it as xml.XMLNode)
+					matching_tags :=
+						child.children.filter(it is xml.XMLNode && it.name == 'v').map(it as xml.XMLNode)
 					if matching_tags.len > 1 {
 						return error('Expected only one <v> element in cell, found ${matching_tags.len}')
 					}
@@ -298,7 +299,8 @@ fn Sheet.from_doc(name string, doc xml.XMLDocument, shared_strings []string, sty
 					}
 
 					// Extract formula from <f> element if present
-					formula_tags := child.children.filter(it is xml.XMLNode && it.name == 'f').map(it as xml.XMLNode)
+					formula_tags :=
+						child.children.filter(it is xml.XMLNode && it.name == 'f').map(it as xml.XMLNode)
 					mut formula := ''
 					if formula_tags.len > 0 {
 						f_tag := formula_tags[0]
