@@ -98,7 +98,9 @@ pub fn (mut sheet Sheet) set_formula(loc Location, formula string) {
 // Sets a date cell at the given location using a time.Time value.
 // The time will be converted to Excel's serial date format internally.
 // style_id=1 applies date formatting (e.g., "01-Jan")
-pub fn (mut sheet Sheet) set_date(loc Location, date Time) {
+// vfmt off
+pub fn (mut sheet Sheet) set_date(loc Location, date time.Time) {
+	// vfmt on
 	sheet.add_cell_internal(loc, CellBuilder{ date: date })
 }
 
