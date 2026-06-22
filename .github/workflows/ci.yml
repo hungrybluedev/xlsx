@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout XLSX module
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: xlsx
 
@@ -85,7 +85,7 @@ jobs:
           check-latest: true
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install xlsx package from current commit
         run: |
