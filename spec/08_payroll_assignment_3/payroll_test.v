@@ -3,6 +3,12 @@ import os
 import time
 import math
 
+const output_path = os.join_path(os.temp_dir(), 'xlsx_spec08_payroll_output.xlsx')
+
+fn testsuite_end() {
+	os.rm(output_path) or {}
+}
+
 // Helper function to compare cell values, handling floating point precision
 fn values_match(ref_val string, out_val string) bool {
 	// Direct string match
@@ -374,8 +380,6 @@ fn test_write_payroll() ! {
 	// Build the payroll document programmatically
 	doc := build_payroll_document()!
 
-	// Write to a file in the spec directory for manual verification
-	output_path := os.join_path(os.dir(@FILE), 'payroll_output.xlsx')
 	doc.to_file(output_path)!
 
 	// Verify file exists and is valid ZIP
@@ -384,8 +388,6 @@ fn test_write_payroll() ! {
 	assert content.len > 4, 'file should have content'
 	assert content[0] == 0x50, 'should start with P (ZIP signature)'
 	assert content[1] == 0x4B, 'should have K (ZIP signature)'
-
-	// Note: Output file is kept at payroll_output.xlsx for manual verification
 }
 
 fn test_roundtrip_payroll() ! {
@@ -450,7 +452,6 @@ fn test_compare_reference_vs_generated() ! {
 
 	// Build and write output file
 	doc := build_payroll_document()!
-	output_path := os.join_path(os.dir(@FILE), 'payroll_output.xlsx')
 	doc.to_file(output_path)!
 
 	// Read generated file
