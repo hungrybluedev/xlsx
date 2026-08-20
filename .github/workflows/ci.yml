@@ -8,34 +8,40 @@ on:
   schedule:
     - cron: "0 0 * * 4"
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   code-quality:
+    name: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+        os: [ubuntu, macos, windows]
+    runs-on: ${{ matrix.os }}-latest
 
     steps:
-      - name: Checkout XLSX module
-        uses: actions/checkout@v6
-        with:
-          path: xlsx
+      # Must precede setup-v, which reads .v-version from the working tree.
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
 
-      - name: Setup V
-        uses: vlang/setup-v@v1.4
+      - name: Setup V (pinned via .v-version)
+        uses: vlang/setup-v@v1.7
         with:
-          check-latest: true
+          version-file: .v-version
+
+      - name: Report V version
+        run: v version
 
       - name: Install module (Unix)
         if: runner.os != 'Windows'
         run: |
           mkdir -p ~/.vmodules
-          ln -s ${{ github.workspace }}/xlsx ~/.vmodules/xlsx
+          ln -s ${{ github.workspace }} ~/.vmodules/xlsx
 
       - name: Install module (Windows)
         if: runner.os == 'Windows'
@@ -43,60 +49,57 @@ jobs:
         run: |
           $vmodulesPath = "$env:USERPROFILE\.vmodules"
           New-Item -ItemType Directory -Force -Path $vmodulesPath | Out-Null
-          cmd /c mklink /D "$vmodulesPath\xlsx" "${{ github.workspace }}\xlsx"
+          cmd /c mklink /D "$vmodulesPath\xlsx" "${{ github.workspace }}"
 
-      # Fast checks first (fail-fast)
-      - name: Check formatting
-        working-directory: xlsx
+      - name: Check if code is formatted
         run: v fmt -verify .
 
       - name: Check documentation
-        working-directory: xlsx
         run: v check-md .
 
-      - name: Check README examples in sync
-        working-directory: xlsx
+      - name: Check README examples are in sync
         run: v run tools/check_readme_sync.v
 
       - name: Compile README snippets
-        working-directory: xlsx
         run: v should-compile-all examples/snippets/
 
       - name: Check examples compile
-        working-directory: xlsx
         run: v should-compile-all examples/
 
-      # Slower checks after
       - name: Run tests
-        working-directory: xlsx
         run: v test .
 
       - name: Run marks example
-        working-directory: xlsx
         run: v run examples/01_marksheet/marks.v
 
-  test-examples:
-    needs: code-quality
+  canary:
+    name: V master canary
     runs-on: ubuntu-latest
+    continue-on-error: true
+
     steps:
-      - name: Setup V
-        uses: vlang/setup-v@v1.4
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+
+      - name: Setup V (latest master)
+        uses: vlang/setup-v@v1.7
         with:
+          version: master
           check-latest: true
 
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - name: Report V version
+        run: v version
 
-      - name: Install xlsx package from current commit
+      - name: Install module
         run: |
           mkdir -p ~/.vmodules
           ln -s ${{ github.workspace }} ~/.vmodules/xlsx
 
-      - name: Verify examples compile
+      - name: Check if code is formatted
+        run: v fmt -verify .
+
+      - name: Check examples compile
         run: v should-compile-all examples/
 
-      - name: Run reading example
-        run: v run examples/01_marksheet/marks.v
-
-      - name: Run example tests
-        run: v test examples/
+      - name: Run tests
+        run: v test .
